@@ -1,14 +1,15 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Menu, Plus } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import TransactionList from './components/TransactionList';
-import AddExpenseModal from './components/AddExpenseModal';
+import TransactionForm from './components/TransactionForm';
 import BudgetView from './components/BudgetView';
 import SettingsView from './components/SettingsView';
-import { expenseService } from './services/mockSupabase';
 import { Expense, BalanceSummary, PayerType } from './types';
 import { Logo } from './components/Logo';
+import { supabase } from './lib/supabase';
 
 function App() {
   const [currentView, setCurrentView] = useState('dashboard');
@@ -17,19 +18,47 @@ function App() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch initial data
+  const fetchExpenses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('expenses')
+        .select('*')
+        .order('date', { ascending: false });
+
+      if (error) throw error;
+      setExpenses(data || []);
+    } catch (error) {
+      console.error("Error fetching expenses:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch initial data & Realtime subscription
   useEffect(() => {
-    const fetchExpenses = async () => {
-      try {
-        const data = await expenseService.getAll();
-        setExpenses(data);
-      } catch (error) {
-        console.error("Error fetching expenses:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchExpenses();
+
+    const channel = supabase
+      .channel('expenses_db_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'expenses'
+        },
+        (payload) => {
+          console.log('Realtime change received!', payload);
+          // Simplified approach: Refresh all data on any change
+          // Verification: This ensures "If I add a expense, my partner sees it"
+          fetchExpenses();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   // Calculate Balance Summary
@@ -37,7 +66,7 @@ function App() {
     const totalA = expenses
       .filter(e => e.payer === 'Socio A')
       .reduce((sum, e) => sum + e.amount, 0);
-    
+
     const totalB = expenses
       .filter(e => e.payer === 'Socio B')
       .reduce((sum, e) => sum + e.amount, 0);
@@ -73,17 +102,15 @@ function App() {
     };
   }, [expenses]);
 
-  const handleAddExpense = async (newExpense: { concept: string; amount: number; payer: PayerType; date: string }) => {
-    try {
-      const added = await expenseService.add(newExpense);
-      setExpenses(prev => [added, ...prev]);
-    } catch (error) {
-      console.error("Error adding expense:", error);
-    }
+  const handleSuccess = () => {
+    // Local updates are handled via Realtime or manual re-fetch if needed
+    // But standard way is waiting for realtime event. 
+    // We can also optimistically update or just re-fetch here to be safe immediately.
+    fetchExpenses();
   };
 
   const getHeaderTitle = () => {
-    switch(currentView) {
+    switch (currentView) {
       case 'dashboard': return 'Panel de Control';
       case 'history': return 'Historial de Movimientos';
       case 'budget': return 'Presupuesto';
@@ -94,36 +121,36 @@ function App() {
 
   return (
     <div className="flex min-h-screen bg-[#f8fafc]">
-      <Sidebar 
-        currentView={currentView} 
-        setView={setCurrentView} 
-        isOpen={isSidebarOpen} 
-        setIsOpen={setIsSidebarOpen} 
+      <Sidebar
+        currentView={currentView}
+        setView={setCurrentView}
+        isOpen={isSidebarOpen}
+        setIsOpen={setIsSidebarOpen}
       />
 
       <div className="flex-1 flex flex-col min-h-screen transition-all duration-300">
         {/* Header */}
         <header className="sticky top-0 z-30 flex h-20 items-center justify-between border-b border-gray-200/60 bg-white/80 px-6 backdrop-blur-xl transition-all">
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={() => setIsSidebarOpen(true)}
               className="p-2 text-zinc-500 hover:bg-zinc-100 rounded-lg md:hidden"
             >
               <Menu size={24} />
             </button>
             <div className="flex items-center gap-3 md:hidden">
-               <Logo className="h-6 w-6" showText={false} />
-               <span className="font-bold text-zinc-900">Intux</span>
+              <Logo className="h-6 w-6" showText={false} />
+              <span className="font-bold text-zinc-900">Intux</span>
             </div>
             <div className="hidden md:block">
-               <h1 className="text-xl font-bold text-zinc-900 tracking-tight">
-                 {getHeaderTitle()}
-               </h1>
+              <h1 className="text-xl font-bold text-zinc-900 tracking-tight">
+                {getHeaderTitle()}
+              </h1>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={() => setIsModalOpen(true)}
               className="group flex items-center gap-2 rounded-xl bg-zinc-950 px-5 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800 focus:outline-none focus:ring-4 focus:ring-zinc-200 active:scale-95 transition-all shadow-lg shadow-zinc-900/10"
             >
@@ -159,10 +186,10 @@ function App() {
         </main>
       </div>
 
-      <AddExpenseModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        onAdd={handleAddExpense} 
+      <TransactionForm
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={handleSuccess}
       />
     </div>
   );

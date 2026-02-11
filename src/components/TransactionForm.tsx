@@ -1,54 +1,72 @@
-import React, { useState } from 'react';
-import { X, CheckCircle2, User, Users } from 'lucide-react';
-import { PayerType } from '../types';
 
-interface AddExpenseModalProps {
+import React, { useState } from 'react';
+import { X, CheckCircle2, User, Users, Loader2 } from 'lucide-react';
+import { PayerType } from '../types';
+import { supabase } from '../lib/supabase';
+
+interface TransactionFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (data: { concept: string; amount: number; payer: PayerType; date: string }) => void;
+  onSuccess: () => void;
 }
 
-const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onAdd }) => {
+const TransactionForm: React.FC<TransactionFormProps> = ({ isOpen, onClose, onSuccess }) => {
   const [concept, setConcept] = useState('');
   const [amount, setAmount] = useState('');
   const [payer, setPayer] = useState<PayerType>('Socio A');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [isLoading, setIsLoading] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!concept || !amount || !payer || !date) return;
 
-    onAdd({
-      concept,
-      amount: parseFloat(amount),
-      payer,
-      date,
-    });
-    
-    // Reset form
-    setConcept('');
-    setAmount('');
-    setPayer('Socio A');
-    setDate(new Date().toISOString().split('T')[0]);
-    onClose();
+    setIsLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from('expenses')
+        .insert({
+          concept,
+          amount: parseFloat(amount),
+          payer,
+          date,
+        });
+
+      if (error) throw error;
+
+      // Reset form
+      setConcept('');
+      setAmount('');
+      setPayer('Socio A');
+      setDate(new Date().toISOString().split('T')[0]);
+      onSuccess();
+      onClose();
+
+    } catch (error) {
+      console.error('Error adding expense:', error);
+      alert('Error al guardar el gasto');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-      <div 
-        className="absolute inset-0 bg-zinc-950/40 backdrop-blur-sm transition-opacity" 
+      <div
+        className="absolute inset-0 bg-zinc-950/40 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
-      
+
       <div className="relative w-full max-w-lg transform overflow-hidden rounded-xl bg-white shadow-2xl transition-all">
         <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4">
           <div>
             <h2 className="text-lg font-semibold text-zinc-900">Nuevo Gasto</h2>
             <p className="text-sm text-zinc-500">Registra un movimiento compartido.</p>
           </div>
-          <button 
+          <button
             onClick={onClose}
             className="rounded-full p-2 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 transition-colors"
           >
@@ -103,17 +121,17 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onAd
             <div className="grid grid-cols-2 gap-3">
               <label className={`
                 relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 p-4 transition-all
-                ${payer === 'Socio A' 
-                  ? 'border-zinc-900 bg-zinc-50 text-zinc-900' 
+                ${payer === 'Socio A'
+                  ? 'border-zinc-900 bg-zinc-50 text-zinc-900'
                   : 'border-zinc-100 bg-white text-zinc-500 hover:border-zinc-200'}
               `}>
-                <input 
-                  type="radio" 
-                  name="payer" 
-                  value="Socio A" 
-                  checked={payer === 'Socio A'} 
+                <input
+                  type="radio"
+                  name="payer"
+                  value="Socio A"
+                  checked={payer === 'Socio A'}
                   onChange={() => setPayer('Socio A')}
-                  className="sr-only" 
+                  className="sr-only"
                 />
                 <User size={24} className="mb-2" />
                 <span className="text-sm font-semibold">Socio A</span>
@@ -126,17 +144,17 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onAd
 
               <label className={`
                 relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 p-4 transition-all
-                ${payer === 'Socio B' 
-                  ? 'border-zinc-900 bg-zinc-50 text-zinc-900' 
+                ${payer === 'Socio B'
+                  ? 'border-zinc-900 bg-zinc-50 text-zinc-900'
                   : 'border-zinc-100 bg-white text-zinc-500 hover:border-zinc-200'}
               `}>
-                <input 
-                  type="radio" 
-                  name="payer" 
-                  value="Socio B" 
-                  checked={payer === 'Socio B'} 
+                <input
+                  type="radio"
+                  name="payer"
+                  value="Socio B"
+                  checked={payer === 'Socio B'}
                   onChange={() => setPayer('Socio B')}
-                  className="sr-only" 
+                  className="sr-only"
                 />
                 <Users size={24} className="mb-2" />
                 <span className="text-sm font-semibold">Socio B</span>
@@ -152,10 +170,15 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onAd
           <div className="pt-2">
             <button
               type="submit"
-              className="w-full flex items-center justify-center gap-2 rounded-lg bg-zinc-900 px-6 py-3.5 text-sm font-semibold text-white hover:bg-zinc-800 focus:outline-none focus:ring-4 focus:ring-zinc-200 active:scale-[0.99] transition-all shadow-lg shadow-zinc-900/10"
+              disabled={isLoading}
+              className="w-full flex items-center justify-center gap-2 rounded-lg bg-zinc-900 px-6 py-3.5 text-sm font-semibold text-white hover:bg-zinc-800 focus:outline-none focus:ring-4 focus:ring-zinc-200 active:scale-[0.99] transition-all shadow-lg shadow-zinc-900/10 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <CheckCircle2 size={18} />
-              Guardar Gasto
+              {isLoading ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <CheckCircle2 size={18} />
+              )}
+              {isLoading ? 'Guardando...' : 'Guardar Gasto'}
             </button>
           </div>
         </form>
@@ -164,4 +187,4 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onAd
   );
 };
 
-export default AddExpenseModal;
+export default TransactionForm;
