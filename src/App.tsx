@@ -9,7 +9,7 @@ import BudgetView from './components/BudgetView';
 import SettingsView from './components/SettingsView';
 import { Expense, BalanceSummary, PayerType } from './types';
 import { Logo } from './components/Logo';
-import { supabase } from './lib/supabase';
+import { supabase, isSupabaseConfigured } from './lib/supabase';
 
 function App() {
   const [currentView, setCurrentView] = useState('dashboard');
@@ -17,6 +17,31 @@ function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  if (!isSupabaseConfigured) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-50 p-4">
+        <div className="w-full max-w-md space-y-4 rounded-xl border border-red-200 bg-white p-6 shadow-xl">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600 mx-auto">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line x1="12" x2="12.01" y1="16" y2="16" /></svg>
+          </div>
+          <div className="text-center">
+            <h2 className="text-lg font-bold text-zinc-900">Configuración Incompleta</h2>
+            <p className="mt-2 text-sm text-zinc-600">
+              No se detectaron las variables de entorno de Supabase.
+            </p>
+          </div>
+          <div className="rounded-lg bg-zinc-100 p-4 text-xs font-mono text-zinc-600 overflow-x-auto">
+            <p>VITE_SUPABASE_URL</p>
+            <p>VITE_SUPABASE_ANON_KEY</p>
+          </div>
+          <p className="text-center text-xs text-zinc-500">
+            Por favor, asegúrese de que estas variables estén configuradas en su entorno de despliegue (Easypanel, Vercel, etc.) o en su archivo .env local.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const fetchExpenses = async () => {
     try {

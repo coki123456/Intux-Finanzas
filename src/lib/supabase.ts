@@ -1,13 +1,18 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  // Instead of crashing the entire app, we log the error.
-  console.error('Missing Supabase environment variables! Please check your .env or build configuration.');
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
+
+if (!isSupabaseConfigured) {
+  console.warn('Missing Supabase environment variables! The app will start but database features will be disabled.');
 }
 
-// Create client even with empty strings to allow app to mount, requests will just fail with 400/401 instead of white screen
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Create client with fallback values to prevent crash on load if variables are missing
+// We use a dummy URL if missing so createClient doesn't throw immediate error
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co', 
+  supabaseAnonKey || 'placeholder-key'
+);
