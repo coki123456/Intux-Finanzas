@@ -18,30 +18,35 @@ function App() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  if (!isSupabaseConfigured) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-50 p-4">
-        <div className="w-full max-w-md space-y-4 rounded-xl border border-red-200 bg-white p-6 shadow-xl">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600 mx-auto">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line x1="12" x2="12.01" y1="16" y2="16" /></svg>
-          </div>
-          <div className="text-center">
-            <h2 className="text-lg font-bold text-zinc-900">Configuración Incompleta</h2>
-            <p className="mt-2 text-sm text-zinc-600">
-              No se detectaron las variables de entorno de Supabase.
-            </p>
-          </div>
-          <div className="rounded-lg bg-zinc-100 p-4 text-xs font-mono text-zinc-600 overflow-x-auto">
-            <p>VITE_SUPABASE_URL</p>
-            <p>VITE_SUPABASE_ANON_KEY</p>
-          </div>
-          <p className="text-center text-xs text-zinc-500">
-            Por favor, asegúrese de que estas variables estén configuradas en su entorno de despliegue (Easypanel, Vercel, etc.) o en su archivo .env local.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // Custom Partner Names
+  const [partnerNames, setPartnerNames] = useState({
+    partnerA: 'Socio A',
+    partnerB: 'Socio B'
+  });
+
+  const fetchSettings = async () => {
+    try {
+      if (!isSupabaseConfigured) return;
+
+      const { data, error } = await supabase
+        .from('app_settings')
+        .select('partner_a_name, partner_b_name')
+        .single();
+
+      if (error && error.code !== 'PGRST116') { // Ignore "no rows" error
+        console.error("Error fetching settings:", error);
+      }
+
+      if (data) {
+        setPartnerNames({
+          partnerA: data.partner_a_name || 'Socio A',
+          partnerB: data.partner_b_name || 'Socio B'
+        });
+      }
+    } catch (err) {
+      console.error("Settings fetch error:", err);
+    }
+  };
 
   const fetchExpenses = async () => {
     try {
@@ -61,24 +66,18 @@ function App() {
 
   // Fetch initial data & Realtime subscription
   useEffect(() => {
+    if (!isSupabaseConfigured) {
+      setIsLoading(false);
+      return;
+    }
+
     fetchExpenses();
+    fetchSettings();
 
     const channel = supabase
-      .channel('expenses_db_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'expenses'
-        },
-        (payload) => {
-          console.log('Realtime change received!', payload);
-          // Simplified approach: Refresh all data on any change
-          // Verification: This ensures "If I add a expense, my partner sees it"
-          fetchExpenses();
-        }
-      )
+      .channel('db_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, () => fetchExpenses())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'app_settings' }, () => fetchSettings())
       .subscribe();
 
     return () => {
@@ -86,32 +85,31 @@ function App() {
     };
   }, []);
 
-  // Calculate Balance Summary
-  const summary: BalanceSummary = useMemo(() => {
-    const totalA = expenses
+  // Calculate Balance Summary for a specific currency
+  const calculateBalanceForCurrency = (currency: 'ARS' | 'USD', expensesList: Expense[]) => {
+    const currencyExpenses = expensesList.filter(e => (e.currency || 'ARS') === currency);
+
+    const totalA = currencyExpenses
       .filter(e => e.payer === 'Socio A')
       .reduce((sum, e) => sum + e.amount, 0);
 
-    const totalB = expenses
+    const totalB = currencyExpenses
       .filter(e => e.payer === 'Socio B')
       .reduce((sum, e) => sum + e.amount, 0);
 
     const total = totalA + totalB;
     const sharePerPerson = total / 2;
-
     const balanceA = totalA - sharePerPerson;
-    // balanceA > 0 means A paid more than share (Owed money)
-    // balanceA < 0 means A paid less than share (Owes money)
 
     let debtor: PayerType | null = null;
     let creditor: PayerType | null = null;
     let amountOwed = 0;
 
-    if (balanceA > 0) {
+    if (balanceA > 0.01) {
       creditor = 'Socio A';
       debtor = 'Socio B';
       amountOwed = balanceA;
-    } else if (balanceA < 0) {
+    } else if (balanceA < -0.01) {
       creditor = 'Socio B';
       debtor = 'Socio A';
       amountOwed = Math.abs(balanceA);
@@ -123,7 +121,15 @@ function App() {
       totalB,
       debtor,
       creditor,
-      amountOwed
+      amountOwed,
+      currency
+    };
+  };
+
+  const summary: BalanceSummary = useMemo(() => {
+    return {
+      ARS: calculateBalanceForCurrency('ARS', expenses),
+      USD: calculateBalanceForCurrency('USD', expenses)
     };
   }, [expenses]);
 
@@ -195,7 +201,11 @@ function App() {
           ) : (
             <div className="max-w-7xl mx-auto">
               {currentView === 'dashboard' && (
-                <Dashboard summary={summary} recentExpenses={expenses} />
+                <Dashboard
+                  summary={summary}
+                  recentExpenses={expenses}
+                  partnerNames={partnerNames}
+                />
               )}
               {currentView === 'history' && (
                 <TransactionList expenses={expenses} />
@@ -204,7 +214,10 @@ function App() {
                 <BudgetView expenses={expenses} />
               )}
               {currentView === 'settings' && (
-                <SettingsView />
+                <SettingsView
+                  partnerNames={partnerNames}
+                  onUpdateNames={fetchSettings} // Refresh after update
+                />
               )}
             </div>
           )}
@@ -215,6 +228,7 @@ function App() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={handleSuccess}
+        partnerNames={partnerNames}
       />
     </div>
   );

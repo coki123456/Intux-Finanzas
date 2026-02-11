@@ -1,18 +1,20 @@
 
 import React, { useState } from 'react';
-import { X, CheckCircle2, User, Users, Loader2 } from 'lucide-react';
-import { PayerType } from '../types';
+import { X, CheckCircle2, User, Users, Loader2, DollarSign, Coins } from 'lucide-react';
+import { PayerType, Currency } from '../types';
 import { supabase } from '../lib/supabase';
 
 interface TransactionFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  partnerNames: { partnerA: string; partnerB: string };
 }
 
-const TransactionForm: React.FC<TransactionFormProps> = ({ isOpen, onClose, onSuccess }) => {
+const TransactionForm: React.FC<TransactionFormProps> = ({ isOpen, onClose, onSuccess, partnerNames }) => {
   const [concept, setConcept] = useState('');
   const [amount, setAmount] = useState('');
+  const [currency, setCurrency] = useState<Currency>('ARS');
   const [payer, setPayer] = useState<PayerType>('Socio A');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [isLoading, setIsLoading] = useState(false);
@@ -33,6 +35,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ isOpen, onClose, onSu
           amount: parseFloat(amount),
           payer,
           date,
+          currency, // Now storing currency!
         });
 
       if (error) throw error;
@@ -40,6 +43,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ isOpen, onClose, onSu
       // Reset form
       setConcept('');
       setAmount('');
+      setCurrency('ARS');
       setPayer('Socio A');
       setDate(new Date().toISOString().split('T')[0]);
       onSuccess();
@@ -91,7 +95,9 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ isOpen, onClose, onSu
             <div className="space-y-2">
               <label className="text-sm font-medium text-zinc-700">Monto</label>
               <div className="relative">
-                <span className="absolute left-3 top-2.5 text-zinc-500 font-semibold">$</span>
+                <span className="absolute left-3 top-2.5 text-zinc-500 font-semibold">
+                  {currency === 'ARS' ? '$' : 'u$d'}
+                </span>
                 <input
                   type="number"
                   required
@@ -100,20 +106,42 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ isOpen, onClose, onSu
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder="0.00"
-                  className="w-full rounded-lg border border-zinc-200 bg-white pl-8 pr-4 py-2.5 text-sm outline-none focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 transition-all placeholder:text-zinc-400"
+                  className="w-full rounded-lg border border-zinc-200 bg-white pl-12 pr-4 py-2.5 text-sm outline-none focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 transition-all placeholder:text-zinc-400"
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-zinc-700">Fecha</label>
-              <input
-                type="date"
-                required
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="w-full rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 transition-all text-zinc-600"
-              />
+              <label className="text-sm font-medium text-zinc-700">Moneda</label>
+              <div className="flex rounded-lg border border-zinc-200 p-1 bg-zinc-50">
+                <button
+                  type="button"
+                  onClick={() => setCurrency('ARS')}
+                  className={`flex-1 flex items-center justify-center gap-1 py-1.5 text-sm font-medium rounded-md transition-all ${currency === 'ARS' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'
+                    }`}
+                >
+                  <Coins size={14} /> ARS
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCurrency('USD')}
+                  className={`flex-1 flex items-center justify-center gap-1 py-1.5 text-sm font-medium rounded-md transition-all ${currency === 'USD' ? 'bg-white text-emerald-700 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'
+                    }`}
+                >
+                  <DollarSign size={14} /> USD
+                </button>
+              </div>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-zinc-700">Fecha</label>
+            <input
+              type="date"
+              required
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 transition-all text-zinc-600"
+            />
           </div>
 
           <div className="space-y-3">
@@ -134,7 +162,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ isOpen, onClose, onSu
                   className="sr-only"
                 />
                 <User size={24} className="mb-2" />
-                <span className="text-sm font-semibold">Socio A</span>
+                <span className="text-sm font-semibold text-center">{partnerNames.partnerA}</span>
                 {payer === 'Socio A' && (
                   <div className="absolute right-2 top-2 text-zinc-900">
                     <CheckCircle2 size={16} className="fill-current" />
@@ -157,7 +185,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ isOpen, onClose, onSu
                   className="sr-only"
                 />
                 <Users size={24} className="mb-2" />
-                <span className="text-sm font-semibold">Socio B</span>
+                <span className="text-sm font-semibold text-center">{partnerNames.partnerB}</span>
                 {payer === 'Socio B' && (
                   <div className="absolute right-2 top-2 text-zinc-900">
                     <CheckCircle2 size={16} className="fill-current" />
