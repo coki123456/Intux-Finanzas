@@ -5,7 +5,7 @@ import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import TransactionList from './components/TransactionList';
 import TransactionForm from './components/TransactionForm';
-import BudgetView from './components/BudgetView';
+
 import SettingsView from './components/SettingsView';
 import { Expense, BalanceSummary, PayerType } from './types';
 import { Logo } from './components/Logo';
@@ -144,7 +144,7 @@ function App() {
     switch (currentView) {
       case 'dashboard': return 'Panel de Control';
       case 'history': return 'Historial de Movimientos';
-      case 'budget': return 'Presupuesto';
+
       case 'settings': return 'Configuración';
       default: return 'Intux Finanzas';
     }
@@ -210,9 +210,7 @@ function App() {
               {currentView === 'history' && (
                 <TransactionList expenses={expenses} />
               )}
-              {currentView === 'budget' && (
-                <BudgetView expenses={expenses} />
-              )}
+
               {currentView === 'settings' && (
                 <SettingsView
                   partnerNames={partnerNames}
