@@ -7,6 +7,14 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
+
+# Declare build arguments
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_ANON_KEY
+
+# Verify args are present (optional debug)
+RUN echo "Building with URL: $VITE_SUPABASE_URL"
+
 RUN npm run build
 
 # Production Stage
