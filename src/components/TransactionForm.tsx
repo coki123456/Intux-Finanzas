@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, CheckCircle2, User, Users, Loader2, DollarSign, Coins } from 'lucide-react';
-import { PayerType, Currency } from '../types';
+import { PayerType, Currency, Expense } from '../types';
 import { supabase } from '../lib/supabase';
 
 interface TransactionFormProps {
@@ -9,15 +9,33 @@ interface TransactionFormProps {
   onClose: () => void;
   onSuccess: () => void;
   partnerNames: { partnerA: string; partnerB: string };
+  initialData?: Expense;
 }
 
-const TransactionForm: React.FC<TransactionFormProps> = ({ isOpen, onClose, onSuccess, partnerNames }) => {
+const TransactionForm: React.FC<TransactionFormProps> = ({ isOpen, onClose, onSuccess, partnerNames, initialData }) => {
   const [concept, setConcept] = useState('');
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState<Currency>('ARS');
   const [payer, setPayer] = useState<PayerType>('Socio A');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && initialData) {
+      setConcept(initialData.concept);
+      setAmount(initialData.amount.toString());
+      setCurrency(initialData.currency);
+      setPayer(initialData.payer);
+      setDate(initialData.date.split('T')[0]);
+    } else if (isOpen && !initialData) {
+      // Reset form if opening in "create" mode
+      setConcept('');
+      setAmount('');
+      setCurrency('ARS');
+      setPayer('Socio A');
+      setDate(new Date().toISOString().split('T')[0]);
+    }
+  }, [isOpen, initialData]);
 
   if (!isOpen) return null;
 
@@ -28,29 +46,40 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ isOpen, onClose, onSu
     setIsLoading(true);
 
     try {
-      const { error } = await supabase
-        .from('expenses')
-        .insert({
-          concept,
-          amount: parseFloat(amount),
-          payer,
-          date,
-          currency, // Now storing currency!
-        });
+      if (initialData) {
+        // Update existing expense
+        const { error } = await supabase
+          .from('expenses')
+          .update({
+            concept,
+            amount: parseFloat(amount),
+            payer,
+            date,
+            currency,
+          })
+          .eq('id', initialData.id);
 
-      if (error) throw error;
+        if (error) throw error;
+      } else {
+        // Create new expense
+        const { error } = await supabase
+          .from('expenses')
+          .insert({
+            concept,
+            amount: parseFloat(amount),
+            payer,
+            date,
+            currency,
+          });
 
-      // Reset form
-      setConcept('');
-      setAmount('');
-      setCurrency('ARS');
-      setPayer('Socio A');
-      setDate(new Date().toISOString().split('T')[0]);
+        if (error) throw error;
+      }
+
       onSuccess();
       onClose();
 
     } catch (error) {
-      console.error('Error adding expense:', error);
+      console.error('Error saving expense:', error);
       alert('Error al guardar el gasto');
     } finally {
       setIsLoading(false);
@@ -67,8 +96,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ isOpen, onClose, onSu
       <div className="relative w-full max-w-lg transform overflow-hidden rounded-xl bg-white shadow-2xl transition-all">
         <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4">
           <div>
-            <h2 className="text-lg font-semibold text-zinc-900">Nuevo Gasto</h2>
-            <p className="text-sm text-zinc-500">Registra un movimiento compartido.</p>
+            <h2 className="text-lg font-semibold text-zinc-900">{initialData ? 'Editar Gasto' : 'Nuevo Gasto'}</h2>
+            <p className="text-sm text-zinc-500">{initialData ? 'Modifica los detalles del movimiento.' : 'Registra un movimiento compartido.'}</p>
           </div>
           <button
             onClick={onClose}
@@ -206,7 +235,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ isOpen, onClose, onSu
               ) : (
                 <CheckCircle2 size={18} />
               )}
-              {isLoading ? 'Guardando...' : 'Guardar Gasto'}
+              {isLoading ? 'Guardando...' : (initialData ? 'Actualizar Gasto' : 'Guardar Gasto')}
             </button>
           </div>
         </form>

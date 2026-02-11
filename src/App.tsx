@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Menu, Plus } from 'lucide-react';
 import Sidebar from './components/Sidebar';
@@ -10,13 +11,22 @@ import SettingsView from './components/SettingsView';
 import { Expense, BalanceSummary, PayerType } from './types';
 import { Logo } from './components/Logo';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
+import { ToastProvider, useToast } from './components/ToastContext';
+import ConfirmModal from './components/ConfirmModal';
 
-function App() {
+function AppContent() {
   const [currentView, setCurrentView] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [editingExpense, setEditingExpense] = useState<Expense | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Delete Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [expenseToDelete, setExpenseToDelete] = useState<string | null>(null);
+
+  const { showToast } = useToast();
 
   // Custom Partner Names
   const [partnerNames, setPartnerNames] = useState({
@@ -59,6 +69,7 @@ function App() {
       setExpenses(data || []);
     } catch (error) {
       console.error("Error fetching expenses:", error);
+      showToast('Error al cargar gastos', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -138,6 +149,39 @@ function App() {
     // But standard way is waiting for realtime event. 
     // We can also optimistically update or just re-fetch here to be safe immediately.
     fetchExpenses();
+    showToast(editingExpense ? 'Gasto actualizado correctamente' : 'Gasto guardado correctamente', 'success');
+  };
+
+  const handleEditExpense = (expense: Expense) => {
+    setEditingExpense(expense);
+    setIsModalOpen(true);
+  };
+
+  const confirmDeleteExpense = (id: string) => {
+    setExpenseToDelete(id);
+    setIsDeleteModalOpen(true);
+  }
+
+  const handleDeleteExpense = async () => {
+    if (!expenseToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from('expenses')
+        .delete()
+        .eq('id', expenseToDelete);
+
+      if (error) throw error;
+
+      fetchExpenses();
+      showToast('Gasto eliminado correctamente', 'success');
+    } catch (error) {
+      console.error("Error deleting expense:", error);
+      showToast('Error al eliminar gasto', 'error');
+    } finally {
+      setIsDeleteModalOpen(false);
+      setExpenseToDelete(null);
+    }
   };
 
   const getHeaderTitle = () => {
@@ -182,7 +226,10 @@ function App() {
 
           <div className="flex items-center gap-4">
             <button
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => {
+                setEditingExpense(undefined);
+                setIsModalOpen(true);
+              }}
               className="group flex items-center gap-2 rounded-xl bg-zinc-950 px-5 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800 focus:outline-none focus:ring-4 focus:ring-zinc-200 active:scale-95 transition-all shadow-lg shadow-zinc-900/10"
             >
               <Plus size={18} className="group-hover:rotate-90 transition-transform duration-300" />
@@ -208,13 +255,21 @@ function App() {
                 />
               )}
               {currentView === 'history' && (
-                <TransactionList expenses={expenses} />
+                <TransactionList
+                  expenses={expenses}
+                  partnerNames={partnerNames}
+                  onEdit={handleEditExpense}
+                  onDelete={confirmDeleteExpense}
+                />
               )}
 
               {currentView === 'settings' && (
                 <SettingsView
                   partnerNames={partnerNames}
-                  onUpdateNames={fetchSettings} // Refresh after update
+                  onUpdateNames={() => {
+                    fetchSettings();
+                    showToast('Nombres actualizados', 'success');
+                  }}
                 />
               )}
             </div>
@@ -224,11 +279,33 @@ function App() {
 
       <TransactionForm
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingExpense(undefined);
+        }}
         onSuccess={handleSuccess}
         partnerNames={partnerNames}
+        initialData={editingExpense}
+      />
+
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDeleteExpense}
+        title="Eliminar Gasto"
+        message="¿Estás seguro de que deseas eliminar este gasto? Esta acción no se puede deshacer."
+        confirmText="Eliminar"
+        isDestructive={true}
       />
     </div>
+  );
+}
+
+function App() {
+  return (
+    <ToastProvider>
+      <AppContent />
+    </ToastProvider>
   );
 }
 
