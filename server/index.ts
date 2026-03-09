@@ -123,7 +123,8 @@ app.post("/api/settings", async (req, res) => {
 const distPath = path.join(__dirname, "../dist");
 app.use(expressApp.static(distPath));
 
-app.get("*", (req, res) => {
+// Catch-all route for SPA fallback (Express 5 safe)
+app.use((req, res) => {
   res.sendFile(path.join(distPath, "index.html"));
 });
 
