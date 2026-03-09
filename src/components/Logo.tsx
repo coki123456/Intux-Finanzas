@@ -1,9 +1,13 @@
-import React from 'react';
+import React from "react";
 
-export const Logo: React.FC<{ className?: string; textClassName?: string; showText?: boolean }> = ({
+export const Logo: React.FC<{
+  className?: string;
+  textClassName?: string;
+  showText?: boolean;
+}> = ({
   className = "h-8 w-8",
   textClassName = "text-xl",
-  showText = true
+  showText = true,
 }) => {
   return (
     <div className="flex items-center gap-3 select-none">

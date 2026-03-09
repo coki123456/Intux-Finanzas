@@ -1,5 +1,5 @@
-export type PayerType = 'Socio A' | 'Socio B';
-export type Currency = 'ARS' | 'USD';
+export type PayerType = "Socio A" | "Socio B";
+export type Currency = "ARS" | "USD";
 
 export interface Expense {
   id: string;
