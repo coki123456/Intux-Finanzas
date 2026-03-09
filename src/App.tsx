@@ -10,110 +10,31 @@ import TransactionForm from './components/TransactionForm';
 import SettingsView from './components/SettingsView';
 import { Expense, BalanceSummary, PayerType } from './types';
 import { Logo } from './components/Logo';
-import { api } from './lib/api';
-import { ToastProvider, useToast } from './components/ToastContext';
+import { useToast, ToastProvider } from './components/ToastContext';
 import ConfirmModal from './components/ConfirmModal';
+import { useFinance } from './hooks/useFinance';
+import Login from './components/Login';
+import { LogOut } from 'lucide-react';
 
-function AppContent() {
+function AppContent({ onLogout }: { onLogout: () => void }) {
   const [currentView, setCurrentView] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
   const [editingExpense, setEditingExpense] = useState<Expense | undefined>(undefined);
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Delete Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<string | null>(null);
-
   const { showToast } = useToast();
 
-  // Custom Partner Names
-  const [partnerNames, setPartnerNames] = useState({
-    partnerA: 'Socio A',
-    partnerB: 'Socio B'
-  });
-
-  const fetchSettings = async () => {
-    try {
-      const data = await api.getSettings();
-
-      if (data) {
-        setPartnerNames({
-          partnerA: data.partnerAName || 'Socio A',
-          partnerB: data.partnerBName || 'Socio B'
-        });
-      }
-    } catch (err) {
-      console.error("Settings fetch error:", err);
-    }
-  };
-
-  const fetchExpenses = async () => {
-    try {
-      const data = await api.getExpenses();
-      setExpenses(data || []);
-    } catch (error) {
-      console.error("Error fetching expenses:", error);
-      showToast('Error al cargar gastos', 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Fetch initial data
-  useEffect(() => {
-    fetchExpenses();
-    fetchSettings();
-  }, []);
-
-  // Calculate Balance Summary for a specific currency
-  const calculateBalanceForCurrency = (currency: 'ARS' | 'USD', expensesList: Expense[]) => {
-    const currencyExpenses = expensesList.filter(e => (e.currency || 'ARS') === currency);
-
-    const totalA = currencyExpenses
-      .filter(e => e.payer === 'Socio A')
-      .reduce((sum, e) => sum + e.amount, 0);
-
-    const totalB = currencyExpenses
-      .filter(e => e.payer === 'Socio B')
-      .reduce((sum, e) => sum + e.amount, 0);
-
-    const total = totalA + totalB;
-    const sharePerPerson = total / 2;
-    const balanceA = totalA - sharePerPerson;
-
-    let debtor: PayerType | null = null;
-    let creditor: PayerType | null = null;
-    let amountOwed = 0;
-
-    if (balanceA > 0.01) {
-      creditor = 'Socio A';
-      debtor = 'Socio B';
-      amountOwed = balanceA;
-    } else if (balanceA < -0.01) {
-      creditor = 'Socio B';
-      debtor = 'Socio A';
-      amountOwed = Math.abs(balanceA);
-    }
-
-    return {
-      total,
-      totalA,
-      totalB,
-      debtor,
-      creditor,
-      amountOwed,
-      currency
-    };
-  };
-
-  const summary: BalanceSummary = useMemo(() => {
-    return {
-      ARS: calculateBalanceForCurrency('ARS', expenses),
-      USD: calculateBalanceForCurrency('USD', expenses)
-    };
-  }, [expenses]);
+  const {
+    expenses,
+    isLoading,
+    partnerNames,
+    summary,
+    fetchExpenses,
+    fetchSettings,
+    deleteExpense
+  } = useFinance(showToast);
 
   const handleSuccess = () => {
     // Local updates are handled via Realtime or manual re-fetch if needed
@@ -137,12 +58,7 @@ function AppContent() {
     if (!expenseToDelete) return;
 
     try {
-      await api.deleteExpense(expenseToDelete);
-      fetchExpenses();
-      showToast('Gasto eliminado correctamente', 'success');
-    } catch (error) {
-      console.error("Error deleting expense:", error);
-      showToast('Error al eliminar gasto', 'error');
+      await deleteExpense(expenseToDelete);
     } finally {
       setIsDeleteModalOpen(false);
       setExpenseToDelete(null);
@@ -190,6 +106,16 @@ function AppContent() {
           </div>
 
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => {
+                localStorage.removeItem('auth_token');
+                onLogout();
+              }}
+              className="p-2 text-zinc-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+              title="Cerrar Sesión"
+            >
+              <LogOut size={20} />
+            </button>
             <button
               onClick={() => {
                 setEditingExpense(undefined);
@@ -267,9 +193,26 @@ function AppContent() {
 }
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  if (!isAuthenticated) {
+    return (
+      <ToastProvider>
+        <Login onLoginSuccess={() => setIsAuthenticated(true)} />
+      </ToastProvider>
+    );
+  }
+
   return (
     <ToastProvider>
-      <AppContent />
+      <AppContent onLogout={() => setIsAuthenticated(false)} />
     </ToastProvider>
   );
 }
