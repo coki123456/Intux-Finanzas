@@ -21,6 +21,10 @@ COPY server/ ./server/
 # from the host or cache before installing fresh Linux ones!
 RUN rm -rf server/node_modules || true
 
+# Force Prisma to use the binary engine type to avoid shared library linking (OpenSSL/musl) issues
+ENV PRISMA_CLIENT_ENGINE_TYPE="binary"
+ENV PRISMA_CLI_QUERY_ENGINE_TYPE="binary"
+
 # Install dependencies and generate Prisma natively for Debian
 RUN cd server && npm install
 RUN cd server && npx prisma generate
