@@ -22,8 +22,8 @@ RUN cd server && npx prisma generate
 COPY --from=frontend-builder /app/dist ./dist
 
 WORKDIR /app/server
+RUN npx tsc
 EXPOSE 3000
 
-# Compile TS on the fly or adjust to JS if we had a build step.
-# For simplicity and similar to previous, ts-node works well here.
-CMD ["npx", "ts-node", "index.ts"]
+# Run the compiled JS
+CMD ["node", "dist/index.js"]
