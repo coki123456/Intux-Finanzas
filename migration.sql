@@ -5,14 +5,14 @@ ADD COLUMN currency text DEFAULT 'ARS';
 -- 2. Create app_settings table for storing partner names
 CREATE TABLE IF NOT EXISTS app_settings (
     id int PRIMARY KEY DEFAULT 1,
-    partner_a_name text DEFAULT 'Socio A',
-    partner_b_name text DEFAULT 'Socio B',
+    partner_a_name text DEFAULT 'Lillo',
+    partner_b_name text DEFAULT 'Coki',
     updated_at timestamp with time zone DEFAULT timezone('utc'::text, now())
 );
 
 -- 3. Insert default settings row if it doesn't exist
 INSERT INTO app_settings (id, partner_a_name, partner_b_name)
-VALUES (1, 'Socio A', 'Socio B')
+VALUES (1, 'Lillo', 'Coki')
 ON CONFLICT (id) DO NOTHING;
 
 -- 4. Enable Row Level Security (RLS) on app_settings (Optional but good practice)

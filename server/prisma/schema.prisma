@@ -21,8 +21,8 @@ model Expense {
 
 model AppSettings {
   id           Int      @id @default(1)
-  partnerAName String   @default("Socio A") @map("partner_a_name")
-  partnerBName String   @default("Socio B") @map("partner_b_name")
+  partnerAName String   @default("Lillo") @map("partner_a_name")
+  partnerBName String   @default("Coki") @map("partner_b_name")
   updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@map("app_settings")
