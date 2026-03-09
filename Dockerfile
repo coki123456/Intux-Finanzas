@@ -7,7 +7,10 @@ COPY . .
 RUN npm run build
 
 # Backend Build & Production Stage
-FROM node:20-alpine AS runner
+# Cambiamos de alpine a slim e instalamos openssl explícitamente para solucionar
+# de raíz la incompatibilidad de librerías nativas con Prisma
+FROM node:20-slim AS runner
+RUN apt-get update && apt-get install -y openssl
 WORKDIR /app
 
 # Copy server files and install dependencies
