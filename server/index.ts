@@ -51,23 +51,33 @@ app.get("/api/expenses", async (req, res) => {
 
 app.post("/api/expenses", async (req, res) => {
   try {
+    const data = { ...req.body };
+    if (data.date) {
+      data.date = new Date(data.date);
+    }
     const expense = await prisma.expense.create({
-      data: req.body,
+      data,
     });
     res.json(expense);
   } catch (error) {
+    console.error("Error creating expense:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
 app.put("/api/expenses/:id", async (req, res) => {
   try {
+    const data = { ...req.body };
+    if (data.date) {
+      data.date = new Date(data.date);
+    }
     const expense = await prisma.expense.update({
       where: { id: req.params.id },
-      data: req.body,
+      data,
     });
     res.json(expense);
   } catch (error) {
+    console.error("Error updating expense:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
