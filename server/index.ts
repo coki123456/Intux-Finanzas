@@ -1,4 +1,3 @@
-import express, { Request, Response, NextFunction } from "react"; // Ignore this invalid import to replace below. // Note: I must write proper Express code here.
 import expressApp from "express";
 import cors from "cors";
 import dotenv from "dotenv";
