@@ -29,8 +29,8 @@ ENV PRISMA_CLI_QUERY_ENGINE_TYPE="binary"
 RUN cd server && npm install
 RUN cd server && npx prisma generate
 
-# Copy frontend build
-COPY --from=frontend-builder /app/dist ./dist
+# Copy frontend build into the server folder where Express expects it
+COPY --from=frontend-builder /app/dist ./server/dist
 
 WORKDIR /app/server
 RUN npx tsc
