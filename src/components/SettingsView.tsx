@@ -1,7 +1,7 @@
 
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import { Loader2, Save } from 'lucide-react';
 
 interface SettingsViewProps {
@@ -21,15 +21,10 @@ const SettingsView: React.FC<SettingsViewProps> = ({ partnerNames, onUpdateNames
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            const { error } = await supabase
-                .from('app_settings')
-                .upsert({
-                    id: 1,
-                    partner_a_name: names.partnerA,
-                    partner_b_name: names.partnerB
-                });
-
-            if (error) throw error;
+            await api.updateSettings({
+                partner_a_name: names.partnerA,
+                partner_b_name: names.partnerB
+            });
 
             onUpdateNames(); // Trigger re-fetch in parent
             alert('Nombres actualizados correctamente');

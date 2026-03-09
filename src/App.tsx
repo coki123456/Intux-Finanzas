@@ -10,7 +10,7 @@ import TransactionForm from './components/TransactionForm';
 import SettingsView from './components/SettingsView';
 import { Expense, BalanceSummary, PayerType } from './types';
 import { Logo } from './components/Logo';
-import { supabase, isSupabaseConfigured } from './lib/supabase';
+import { api } from './lib/api';
 import { ToastProvider, useToast } from './components/ToastContext';
 import ConfirmModal from './components/ConfirmModal';
 
@@ -36,21 +36,12 @@ function AppContent() {
 
   const fetchSettings = async () => {
     try {
-      if (!isSupabaseConfigured) return;
-
-      const { data, error } = await supabase
-        .from('app_settings')
-        .select('partner_a_name, partner_b_name')
-        .single();
-
-      if (error && error.code !== 'PGRST116') { // Ignore "no rows" error
-        console.error("Error fetching settings:", error);
-      }
+      const data = await api.getSettings();
 
       if (data) {
         setPartnerNames({
-          partnerA: data.partner_a_name || 'Socio A',
-          partnerB: data.partner_b_name || 'Socio B'
+          partnerA: data.partnerAName || 'Socio A',
+          partnerB: data.partnerBName || 'Socio B'
         });
       }
     } catch (err) {
@@ -60,12 +51,7 @@ function AppContent() {
 
   const fetchExpenses = async () => {
     try {
-      const { data, error } = await supabase
-        .from('expenses')
-        .select('*')
-        .order('date', { ascending: false });
-
-      if (error) throw error;
+      const data = await api.getExpenses();
       setExpenses(data || []);
     } catch (error) {
       console.error("Error fetching expenses:", error);
@@ -75,25 +61,10 @@ function AppContent() {
     }
   };
 
-  // Fetch initial data & Realtime subscription
+  // Fetch initial data
   useEffect(() => {
-    if (!isSupabaseConfigured) {
-      setIsLoading(false);
-      return;
-    }
-
     fetchExpenses();
     fetchSettings();
-
-    const channel = supabase
-      .channel('db_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, () => fetchExpenses())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'app_settings' }, () => fetchSettings())
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, []);
 
   // Calculate Balance Summary for a specific currency
@@ -166,13 +137,7 @@ function AppContent() {
     if (!expenseToDelete) return;
 
     try {
-      const { error } = await supabase
-        .from('expenses')
-        .delete()
-        .eq('id', expenseToDelete);
-
-      if (error) throw error;
-
+      await api.deleteExpense(expenseToDelete);
       fetchExpenses();
       showToast('Gasto eliminado correctamente', 'success');
     } catch (error) {

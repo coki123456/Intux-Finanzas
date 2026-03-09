@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, CheckCircle2, User, Users, Loader2, DollarSign, Coins } from 'lucide-react';
 import { PayerType, Currency, Expense } from '../types';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 
 interface TransactionFormProps {
   isOpen: boolean;
@@ -46,33 +46,18 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ isOpen, onClose, onSu
     setIsLoading(true);
 
     try {
+      const expenseData = {
+        concept,
+        amount: parseFloat(amount),
+        payer,
+        date,
+        currency,
+      };
+
       if (initialData) {
-        // Update existing expense
-        const { error } = await supabase
-          .from('expenses')
-          .update({
-            concept,
-            amount: parseFloat(amount),
-            payer,
-            date,
-            currency,
-          })
-          .eq('id', initialData.id);
-
-        if (error) throw error;
+        await api.updateExpense(initialData.id, expenseData);
       } else {
-        // Create new expense
-        const { error } = await supabase
-          .from('expenses')
-          .insert({
-            concept,
-            amount: parseFloat(amount),
-            payer,
-            date,
-            currency,
-          });
-
-        if (error) throw error;
+        await api.createExpense(expenseData);
       }
 
       onSuccess();

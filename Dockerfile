@@ -1,31 +1,33 @@
-# Build Stage
-FROM node:20-alpine as builder
-
+# Build Stage for Frontend
+FROM node:20-alpine as frontend-builder
 WORKDIR /app
-
 COPY package*.json ./
 RUN npm install
-
 COPY . .
-
-# Declare build arguments
-ARG VITE_SUPABASE_URL
-ARG VITE_SUPABASE_ANON_KEY
-
-# Verify args are present (optional debug)
-RUN echo "Building with URL: $VITE_SUPABASE_URL"
-
 RUN npm run build
 
+# Build Stage for Backend
+FROM node:20-alpine as backend-builder
+WORKDIR /app
+COPY server/package*.json ./server/
+RUN cd server && npm install
+COPY server/ ./server/
+RUN cd server && npx prisma generate
+
 # Production Stage
-FROM nginx:alpine
+FROM node:20-alpine
+WORKDIR /app
 
-# Copy built assets from builder stage
-COPY --from=builder /app/dist /usr/share/nginx/html
+# Copy frontend build
+COPY --from=frontend-builder /app/dist ./dist
 
-# Copy custom nginx config for SPA routing
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy backend
+COPY --from=backend-builder /app/server ./server
+COPY --from=backend-builder /app/node_modules ./node_modules
 
-EXPOSE 80
+WORKDIR /app/server
+EXPOSE 3000
 
-CMD ["nginx", "-g", "daemon off;"]
+# We use ts-node for simplicity in this migration, but in a real prod env 
+# we'd compile to JS. For Easypanel, this works fine.
+CMD ["npm", "start"]
