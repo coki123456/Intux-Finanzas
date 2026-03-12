@@ -16,6 +16,8 @@ WORKDIR /app
 
 # Copy ALL server files first
 COPY server/ ./server/
+# Copy .env to server folder so it can be loaded
+COPY .env ./server/.env
 
 # Explicitly REMOVE any rogue node_modules that might have been copied 
 # from the host or cache before installing fresh Linux ones!

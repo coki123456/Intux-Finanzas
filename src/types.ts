@@ -1,27 +1,27 @@
-export type PayerType = "Socio A" | "Socio B";
-export type Currency = "ARS" | "USD";
+export type TipoPagador = "Socio A" | "Socio B";
+export type Moneda = "ARS" | "USD";
 
-export interface Expense {
+export interface Gasto {
   id: string;
-  created_at: string;
-  concept: string;
-  amount: number;
-  payer: PayerType;
-  date: string;
-  currency: Currency;
+  fecha_creacion: string;
+  concepto: string;
+  monto: number;
+  pagador: TipoPagador;
+  fecha: string;
+  moneda: Moneda;
 }
 
-export interface SingleCurrencyBalance {
+export interface ResumenSaldoIndividual {
   total: number;
   totalA: number;
   totalB: number;
-  debtor: PayerType | null;
-  creditor: PayerType | null;
-  amountOwed: number;
-  currency: Currency;
+  deudor: TipoPagador | null;
+  acreedor: TipoPagador | null;
+  montoAdeudado: number;
+  moneda: Moneda;
 }
 
-export interface BalanceSummary {
-  ARS: SingleCurrencyBalance;
-  USD: SingleCurrencyBalance;
+export interface ResumenBalance {
+  ARS: ResumenSaldoIndividual;
+  USD: ResumenSaldoIndividual;
 }

@@ -1,130 +1,130 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { Expense, BalanceSummary, PayerType } from "../types";
+import { Gasto, ResumenBalance, TipoPagador } from "../types";
 import { api } from "../lib/api";
 
-export function useFinance(
-  showToast: (msg: string, type: "success" | "error") => void,
+export function useFinanzas(
+  mostrarToast: (mensaje: string, tipo: "success" | "error") => void,
 ) {
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [partnerNames, setPartnerNames] = useState({
-    partnerA: "Socio A",
-    partnerB: "Socio B",
+  const [gastos, setGastos] = useState<Gasto[]>([]);
+  const [estaCargando, setEstaCargando] = useState(true);
+  const [nombresSocios, setNombresSocios] = useState({
+    socioA: "Socio A",
+    socioB: "Socio B",
   });
 
-  const fetchSettings = useCallback(async () => {
+  const obtenerConfiguracion = useCallback(async () => {
     try {
-      const data = await api.getSettings();
-      // PostgREST returns an array for SELECT queries
-      if (data && data.length > 0) {
-        setPartnerNames({
-          partnerA: data[0].partner_a_name || "Socio A",
-          partnerB: data[0].partner_b_name || "Socio B",
+      const datos = await api.obtenerConfiguracion();
+      // PostgREST devuelve un array para consultas SELECT
+      if (datos && datos.length > 0) {
+        setNombresSocios({
+          socioA: datos[0].partner_a_name || "Socio A",
+          socioB: datos[0].partner_b_name || "Socio B",
         });
-      } else if (data && !Array.isArray(data)) {
-        // Fallback if it's already an object
-        setPartnerNames({
-          partnerA: data.partner_a_name || data.partnerAName || "Socio A",
-          partnerB: data.partner_b_name || data.partnerBName || "Socio B",
+      } else if (datos && !Array.isArray(datos)) {
+        // Fallback si ya es un objeto
+        setNombresSocios({
+          socioA: datos.partner_a_name || datos.partnerAName || "Socio A",
+          socioB: datos.partner_b_name || datos.partnerBName || "Socio B",
         });
       }
-    } catch (err) {
-      console.error("Settings fetch error:", err);
+    } catch (error) {
+      console.error("Error al obtener configuración:", error);
     }
   }, []);
 
-  const fetchExpenses = useCallback(async () => {
+  const obtenerGastos = useCallback(async () => {
     try {
-      setIsLoading(true);
-      const data = await api.getExpenses();
-      setExpenses(data || []);
+      setEstaCargando(true);
+      const datos = await api.obtenerGastos();
+      setGastos(datos || []);
     } catch (error) {
-      console.error("Error fetching expenses:", error);
-      showToast("Error al cargar gastos", "error");
+      console.error("Error al obtener gastos:", error);
+      mostrarToast("Error al cargar gastos", "error");
     } finally {
-      setIsLoading(false);
+      setEstaCargando(false);
     }
-  }, [showToast]);
+  }, [mostrarToast]);
 
   useEffect(() => {
-    fetchExpenses();
-    fetchSettings();
-  }, [fetchExpenses, fetchSettings]);
+    obtenerGastos();
+    obtenerConfiguracion();
+  }, [obtenerGastos, obtenerConfiguracion]);
 
-  const calculateBalanceForCurrency = useCallback(
-    (currency: "ARS" | "USD", expensesList: Expense[]) => {
-      const currencyExpenses = expensesList.filter(
-        (e) => (e.currency || "ARS") === currency,
+  const calcularBalancePorMoneda = useCallback(
+    (moneda: "ARS" | "USD", listaGastos: Gasto[]) => {
+      const gastosMoneda = listaGastos.filter(
+        (g) => (g.moneda || "ARS") === moneda,
       );
 
-      const totalA = currencyExpenses
-        .filter((e) => e.payer === "Socio A")
-        .reduce((sum, e) => sum + e.amount, 0);
+      const totalA = gastosMoneda
+        .filter((g) => g.pagador === "Socio A")
+        .reduce((suma, g) => suma + g.monto, 0);
 
-      const totalB = currencyExpenses
-        .filter((e) => e.payer === "Socio B")
-        .reduce((sum, e) => sum + e.amount, 0);
+      const totalB = gastosMoneda
+        .filter((g) => g.pagador === "Socio B")
+        .reduce((suma, g) => suma + g.monto, 0);
 
       const total = totalA + totalB;
-      const sharePerPerson = total / 2;
-      const balanceA = totalA - sharePerPerson;
+      const cuotaPorPersona = total / 2;
+      const balanceA = totalA - cuotaPorPersona;
 
-      let debtor: PayerType | null = null;
-      let creditor: PayerType | null = null;
-      let amountOwed = 0;
+      let deudor: TipoPagador | null = null;
+      let acreedor: TipoPagador | null = null;
+      let montoAdeudado = 0;
 
       if (balanceA > 0.01) {
-        creditor = "Socio A";
-        debtor = "Socio B";
-        amountOwed = balanceA;
+        acreedor = "Socio A";
+        deudor = "Socio B";
+        montoAdeudado = balanceA;
       } else if (balanceA < -0.01) {
-        creditor = "Socio B";
-        debtor = "Socio A";
-        amountOwed = Math.abs(balanceA);
+        acreedor = "Socio B";
+        deudor = "Socio A";
+        montoAdeudado = Math.abs(balanceA);
       }
 
       return {
         total,
         totalA,
         totalB,
-        debtor,
-        creditor,
-        amountOwed,
-        currency,
+        deudor,
+        acreedor,
+        montoAdeudado,
+        moneda,
       };
     },
     [],
   );
 
-  const summary: BalanceSummary = useMemo(() => {
+  const resumen: ResumenBalance = useMemo(() => {
     return {
-      ARS: calculateBalanceForCurrency("ARS", expenses),
-      USD: calculateBalanceForCurrency("USD", expenses),
+      ARS: calcularBalancePorMoneda("ARS", gastos),
+      USD: calcularBalancePorMoneda("USD", gastos),
     };
-  }, [expenses, calculateBalanceForCurrency]);
+  }, [gastos, calcularBalancePorMoneda]);
 
-  const deleteExpense = useCallback(
+  const eliminarGasto = useCallback(
     async (id: string) => {
       try {
-        await api.deleteExpense(id);
-        await fetchExpenses();
-        showToast("Gasto eliminado correctamente", "success");
+        await api.eliminarGasto(id);
+        await obtenerGastos();
+        mostrarToast("Gasto eliminado correctamente", "success");
       } catch (error) {
-        console.error("Error deleting expense:", error);
-        showToast("Error al eliminar gasto", "error");
+        console.error("Error al eliminar gasto:", error);
+        mostrarToast("Error al eliminar gasto", "error");
         throw error;
       }
     },
-    [fetchExpenses, showToast],
+    [obtenerGastos, mostrarToast],
   );
 
   return {
-    expenses,
-    isLoading,
-    partnerNames,
-    summary,
-    fetchExpenses,
-    fetchSettings,
-    deleteExpense,
+    gastos,
+    estaCargando,
+    nombresSocios,
+    resumen,
+    obtenerGastos,
+    obtenerConfiguracion,
+    eliminarGasto,
   };
 }

@@ -8,78 +8,78 @@ import {
   DollarSign,
   Coins,
 } from "lucide-react";
-import { PayerType, Currency, Expense } from "../types";
+import { TipoPagador, Moneda, Gasto } from "../types";
 import { api } from "../lib/api";
 
-interface TransactionFormProps {
+interface FormularioTransaccionProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  partnerNames: { partnerA: string; partnerB: string };
-  initialData?: Expense;
+  partnerNames: { socioA: string; socioB: string };
+  initialData?: Gasto;
 }
 
-const TransactionForm: React.FC<TransactionFormProps> = ({
+const TransactionForm: React.FC<FormularioTransaccionProps> = ({
   isOpen,
   onClose,
   onSuccess,
   partnerNames,
   initialData,
 }) => {
-  const [concept, setConcept] = useState("");
-  const [amount, setAmount] = useState("");
-  const [currency, setCurrency] = useState<Currency>("ARS");
-  const [payer, setPayer] = useState<PayerType>("Socio A");
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [concepto, setConcepto] = useState("");
+  const [monto, setMonto] = useState("");
+  const [moneda, setMoneda] = useState<Moneda>("ARS");
+  const [pagador, setPagador] = useState<TipoPagador>("Socio A");
+  const [fecha, setFecha] = useState(new Date().toISOString().split("T")[0]);
+  const [estaCargando, setEstaCargando] = useState(false);
 
   useEffect(() => {
     if (isOpen && initialData) {
-      setConcept(initialData.concept);
-      setAmount(initialData.amount.toString());
-      setCurrency(initialData.currency);
-      setPayer(initialData.payer);
-      setDate(initialData.date.split("T")[0]);
+      setConcepto(initialData.concepto);
+      setMonto(initialData.monto.toString());
+      setMoneda(initialData.moneda);
+      setPagador(initialData.pagador);
+      setFecha(initialData.fecha.split("T")[0]);
     } else if (isOpen && !initialData) {
-      // Reset form if opening in "create" mode
-      setConcept("");
-      setAmount("");
-      setCurrency("ARS");
-      setPayer("Socio A");
-      setDate(new Date().toISOString().split("T")[0]);
+      // Reiniciar formulario si se abre en modo "crear"
+      setConcepto("");
+      setMonto("");
+      setMoneda("ARS");
+      setPagador("Socio A");
+      setFecha(new Date().toISOString().split("T")[0]);
     }
   }, [isOpen, initialData]);
 
   if (!isOpen) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const manejarEnvio = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!concept || !amount || !payer || !date) return;
+    if (!concepto || !monto || !pagador || !fecha) return;
 
-    setIsLoading(true);
+    setEstaCargando(true);
 
     try {
-      const expenseData = {
-        concept,
-        amount: parseFloat(amount),
-        payer,
-        date,
-        currency,
+      const datosGasto = {
+        concept: concepto,
+        amount: parseFloat(monto),
+        payer: pagador,
+        date: fecha,
+        currency: moneda,
       };
 
       if (initialData) {
-        await api.updateExpense(initialData.id, expenseData);
+        await api.actualizarGasto(initialData.id, datosGasto);
       } else {
-        await api.createExpense(expenseData);
+        await api.crearGasto(datosGasto);
       }
 
       onSuccess();
       onClose();
     } catch (error) {
-      console.error("Error saving expense:", error);
+      console.error("Error al guardar gasto:", error);
       alert("Error al guardar el gasto");
     } finally {
-      setIsLoading(false);
+      setEstaCargando(false);
     }
   };
 
@@ -110,7 +110,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={manejarEnvio} className="p-6 space-y-6">
           <div className="space-y-2">
             <label className="text-sm font-medium text-zinc-700">
               Concepto
@@ -118,8 +118,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
             <input
               type="text"
               required
-              value={concept}
-              onChange={(e) => setConcept(e.target.value)}
+              value={concepto}
+              onChange={(e) => setConcepto(e.target.value)}
               placeholder="Ej: Compra de supermercado"
               className="w-full rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 transition-all placeholder:text-zinc-400"
             />
@@ -130,15 +130,15 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
               <label className="text-sm font-medium text-zinc-700">Monto</label>
               <div className="relative">
                 <span className="absolute left-3 top-2.5 text-zinc-500 font-semibold">
-                  {currency === "ARS" ? "$" : "u$d"}
+                  {moneda === "ARS" ? "$" : "u$d"}
                 </span>
                 <input
                   type="number"
                   required
                   step="0.01"
                   min="0"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  value={monto}
+                  onChange={(e) => setMonto(e.target.value)}
                   placeholder="0.00"
                   className="w-full rounded-lg border border-zinc-200 bg-white pl-12 pr-4 py-2.5 text-sm outline-none focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 transition-all placeholder:text-zinc-400"
                 />
@@ -151,9 +151,9 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
               <div className="flex rounded-lg border border-zinc-200 p-1 bg-zinc-50">
                 <button
                   type="button"
-                  onClick={() => setCurrency("ARS")}
+                  onClick={() => setMoneda("ARS")}
                   className={`flex-1 flex items-center justify-center gap-1 py-1.5 text-sm font-medium rounded-md transition-all ${
-                    currency === "ARS"
+                    moneda === "ARS"
                       ? "bg-white text-zinc-900 shadow-sm"
                       : "text-zinc-500 hover:text-zinc-700"
                   }`}
@@ -162,9 +162,9 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setCurrency("USD")}
+                  onClick={() => setMoneda("USD")}
                   className={`flex-1 flex items-center justify-center gap-1 py-1.5 text-sm font-medium rounded-md transition-all ${
-                    currency === "USD"
+                    moneda === "USD"
                       ? "bg-white text-emerald-700 shadow-sm"
                       : "text-zinc-500 hover:text-zinc-700"
                   }`}
@@ -180,8 +180,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
             <input
               type="date"
               required
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
+              value={fecha}
+              onChange={(e) => setFecha(e.target.value)}
               className="w-full rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 transition-all text-zinc-600"
             />
           </div>
@@ -195,7 +195,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
                 className={`
                 relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 p-4 transition-all
                 ${
-                  payer === "Socio A"
+                  pagador === "Socio A"
                     ? "border-zinc-900 bg-zinc-50 text-zinc-900"
                     : "border-zinc-100 bg-white text-zinc-500 hover:border-zinc-200"
                 }
@@ -203,17 +203,17 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
               >
                 <input
                   type="radio"
-                  name="payer"
+                  name="pagador"
                   value="Socio A"
-                  checked={payer === "Socio A"}
-                  onChange={() => setPayer("Socio A")}
+                  checked={pagador === "Socio A"}
+                  onChange={() => setPagador("Socio A")}
                   className="sr-only"
                 />
                 <User size={24} className="mb-2" />
                 <span className="text-sm font-semibold text-center">
-                  {partnerNames.partnerA}
+                  {partnerNames.socioA}
                 </span>
-                {payer === "Socio A" && (
+                {pagador === "Socio A" && (
                   <div className="absolute right-2 top-2 text-zinc-900">
                     <CheckCircle2 size={16} className="fill-current" />
                   </div>
@@ -224,7 +224,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
                 className={`
                 relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 p-4 transition-all
                 ${
-                  payer === "Socio B"
+                  pagador === "Socio B"
                     ? "border-zinc-900 bg-zinc-50 text-zinc-900"
                     : "border-zinc-100 bg-white text-zinc-500 hover:border-zinc-200"
                 }
@@ -232,17 +232,17 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
               >
                 <input
                   type="radio"
-                  name="payer"
+                  name="pagador"
                   value="Socio B"
-                  checked={payer === "Socio B"}
-                  onChange={() => setPayer("Socio B")}
+                  checked={pagador === "Socio B"}
+                  onChange={() => setPagador("Socio B")}
                   className="sr-only"
                 />
                 <Users size={24} className="mb-2" />
                 <span className="text-sm font-semibold text-center">
-                  {partnerNames.partnerB}
+                  {partnerNames.socioB}
                 </span>
-                {payer === "Socio B" && (
+                {pagador === "Socio B" && (
                   <div className="absolute right-2 top-2 text-zinc-900">
                     <CheckCircle2 size={16} className="fill-current" />
                   </div>
@@ -254,15 +254,15 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
           <div className="pt-2">
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={estaCargando}
               className="w-full flex items-center justify-center gap-2 rounded-lg bg-zinc-900 px-6 py-3.5 text-sm font-semibold text-white hover:bg-zinc-800 focus:outline-none focus:ring-4 focus:ring-zinc-200 active:scale-[0.99] transition-all shadow-lg shadow-zinc-900/10 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? (
+              {estaCargando ? (
                 <Loader2 size={18} className="animate-spin" />
               ) : (
                 <CheckCircle2 size={18} />
               )}
-              {isLoading
+              {estaCargando
                 ? "Guardando..."
                 : initialData
                   ? "Actualizar Gasto"

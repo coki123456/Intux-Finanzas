@@ -1,7 +1,7 @@
 node_modules
 server/node_modules
 dist
-.env
+# .env (se permite para copia en Dockerfile)
 .git
 .DS_Store
 *.log

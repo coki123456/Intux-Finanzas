@@ -1,84 +1,104 @@
-import expressApp from "express";
+import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import path from "path";
+import { join } from "path";
 import { PrismaClient } from "@prisma/client";
 
-dotenv.config({ path: path.join(__dirname, "../.env") });
+// Carga robusta de variables de entorno
+const cargarConfiguracion = () => {
+  const rutasPosibles = [
+    join(__dirname, "../.env"),
+    join(process.cwd(), ".env"),
+    join(process.cwd(), "server/.env"),
+  ];
 
-const app = expressApp();
+  for (const ruta of rutasPosibles) {
+    const resultado = dotenv.config({ path: ruta });
+    if (!resultado.error) {
+      console.log(`Configuración cargada desde: ${ruta}`);
+      return;
+    }
+  }
+  console.warn(
+    "Advertencia: No se encontró archivo .env en las rutas habituales. Se usarán variables de entorno del sistema.",
+  );
+};
+
+cargarConfiguracion();
+
+const app = express();
 const prisma = new PrismaClient();
-const PORT = process.env.PORT || 3000;
+const PUERTO = process.env.PORT || 3000;
 
 app.use(cors());
-app.use(expressApp.json());
+app.use(express.json());
 
-// API Key Middleware
-const apiKeyAuth = (
-  req: expressApp.Request,
-  res: expressApp.Response,
-  next: expressApp.NextFunction,
+// Middleware de Autenticación por API Key
+const autenticacionApiKey = (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
 ) => {
-  const apiKey = req.headers["x-api-key"];
-  const lilloPass = process.env.LILLO_PASSWORD;
-  const cokiPass = process.env.COKI_PASSWORD;
+  const claveApi = req.headers["x-api-key"];
+  const passLillo = process.env.LILLO_PASSWORD;
+  const passCoki = process.env.COKI_PASSWORD;
 
-  if (!apiKey) {
-    return res.status(401).json({ error: "No API key provided" });
+  if (!claveApi) {
+    return res.status(401).json({ error: "No se proporcionó API Key" });
   }
 
-  if (apiKey !== lilloPass && apiKey !== cokiPass) {
-    return res.status(403).json({ error: "Invalid API key" });
+  if (claveApi !== passLillo && claveApi !== passCoki) {
+    return res.status(403).json({ error: "API Key inválida" });
   }
 
   next();
 };
 
-app.use("/api", apiKeyAuth);
+app.use("/api", autenticacionApiKey);
 
-// API Routes
+// Rutas de la API
 app.get("/api/expenses", async (req, res) => {
   try {
-    const expenses = await prisma.expense.findMany({
+    const gastos = await prisma.expense.findMany({
       orderBy: { date: "desc" },
     });
-    res.json(expenses);
+    res.json(gastos);
   } catch (error) {
-    console.error("Error fetching expenses:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    console.error("Error al obtener gastos:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 });
 
 app.post("/api/expenses", async (req, res) => {
   try {
-    const data = { ...req.body };
-    if (data.date) {
-      data.date = new Date(data.date);
+    const datos = { ...req.body };
+    if (datos.date) {
+      datos.date = new Date(datos.date);
     }
-    const expense = await prisma.expense.create({
-      data,
+    const gasto = await prisma.expense.create({
+      data: datos,
     });
-    res.json(expense);
+    res.json(gasto);
   } catch (error) {
-    console.error("Error creating expense:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    console.error("Error al crear gasto:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 });
 
 app.put("/api/expenses/:id", async (req, res) => {
   try {
-    const data = { ...req.body };
-    if (data.date) {
-      data.date = new Date(data.date);
+    const datos = { ...req.body };
+    if (datos.date) {
+      datos.date = new Date(datos.date);
     }
-    const expense = await prisma.expense.update({
+    const gasto = await prisma.expense.update({
       where: { id: req.params.id },
-      data,
+      data: datos,
     });
-    res.json(expense);
+    res.json(gasto);
   } catch (error) {
-    console.error("Error updating expense:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    console.error("Error al actualizar gasto:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 });
 
@@ -89,21 +109,20 @@ app.delete("/api/expenses/:id", async (req, res) => {
     });
     res.status(204).send();
   } catch (error) {
-    res.status(500).json({ error: "Internal Server Error" });
+    console.error("Error al eliminar gasto:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 });
 
 app.get("/api/settings", async (req, res) => {
   try {
-    const settings = await prisma.appSettings.findUnique({
+    const configuracion = await prisma.appSettings.findUnique({
       where: { id: 1 },
     });
-    // Return array to match previous PostgREST expectation, or adapt frontend.
-    // The previous frontend expected an array due to PostgREST, let's wrap it in an array or object.
-    // Our refactored `useFinance.ts` handles both!
-    res.json(settings);
+    res.json(configuracion);
   } catch (error) {
-    res.status(500).json({ error: "Internal Server Error" });
+    console.error("Error al obtener configuración:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 });
 
@@ -111,7 +130,7 @@ app.post("/api/settings", async (req, res) => {
   try {
     const { partnerAName, partnerBName, partner_a_name, partner_b_name } =
       req.body;
-    const settings = await prisma.appSettings.upsert({
+    const configuracion = await prisma.appSettings.upsert({
       where: { id: 1 },
       update: {
         partnerAName: partnerAName || partner_a_name,
@@ -123,21 +142,22 @@ app.post("/api/settings", async (req, res) => {
         partnerBName: partnerBName || partner_b_name || "Coki",
       },
     });
-    res.json(settings);
+    res.json(configuracion);
   } catch (error) {
-    res.status(500).json({ error: "Internal Server Error" });
+    console.error("Error al guardar configuración:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 });
 
-// Serve frontend in production
-const distPath = path.join(__dirname, "../dist");
-app.use(expressApp.static(distPath));
+// Servir frontend en producción
+const rutaDist = join(__dirname, "../dist");
+app.use(express.static(rutaDist));
 
-// Catch-all route for SPA fallback (Express 5 safe)
+// Fallback para SPA (Single Page Application)
 app.use((req, res) => {
-  res.sendFile(path.join(distPath, "index.html"));
+  res.sendFile(join(rutaDist, "index.html"));
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+app.listen(PUERTO, () => {
+  console.log(`Servidor ejecutándose en el puerto ${PUERTO}`);
 });

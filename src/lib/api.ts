@@ -1,72 +1,72 @@
-export const API_URL = import.meta.env.VITE_API_URL || "";
+export const URL_API = import.meta.env.VITE_API_URL || "";
 
-function getAuthHeaders() {
+function obtenerCabecerasAuth() {
   const token = localStorage.getItem("intux_pass");
   return token ? { "x-api-key": token } : {};
 }
 
-async function handleResponse(response: Response) {
-  if (!response.ok) {
-    const error = await response
+async function manejarRespuesta(respuesta: Response) {
+  if (!respuesta.ok) {
+    const error = await respuesta
       .json()
-      .catch(() => ({ error: "Unknown error" }));
-    throw new Error(error.error || error.message || "Request failed");
+      .catch(() => ({ error: "Error desconocido" }));
+    throw new Error(error.error || error.message || "Error en la petición");
   }
-  if (response.status === 204) return null;
-  return response.json();
+  if (respuesta.status === 204) return null;
+  return respuesta.json();
 }
 
 export const api = {
-  async getExpenses() {
-    const response = await fetch(`${API_URL}/api/expenses`, {
-      headers: { ...getAuthHeaders() },
+  async obtenerGastos() {
+    const respuesta = await fetch(`${URL_API}/api/expenses`, {
+      headers: { ...obtenerCabecerasAuth() },
     });
-    return handleResponse(response);
+    return manejarRespuesta(respuesta);
   },
 
-  async createExpense(expense: any) {
-    const response = await fetch(`${API_URL}/api/expenses`, {
+  async crearGasto(gasto: any) {
+    const respuesta = await fetch(`${URL_API}/api/expenses`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-      body: JSON.stringify(expense),
+      headers: { "Content-Type": "application/json", ...obtenerCabecerasAuth() },
+      body: JSON.stringify(gasto),
     });
-    return handleResponse(response);
+    return manejarRespuesta(respuesta);
   },
 
-  async updateExpense(id: string, expense: any) {
-    const response = await fetch(`${API_URL}/api/expenses/${id}`, {
+  async actualizarGasto(id: string, gasto: any) {
+    const respuesta = await fetch(`${URL_API}/api/expenses/${id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-      body: JSON.stringify(expense),
+      headers: { "Content-Type": "application/json", ...obtenerCabecerasAuth() },
+      body: JSON.stringify(gasto),
     });
-    return handleResponse(response);
+    return manejarRespuesta(respuesta);
   },
 
-  async deleteExpense(id: string) {
-    const response = await fetch(`${API_URL}/api/expenses/${id}`, {
+  async eliminarGasto(id: string) {
+    const respuesta = await fetch(`${URL_API}/api/expenses/${id}`, {
       method: "DELETE",
-      headers: { ...getAuthHeaders() },
+      headers: { ...obtenerCabecerasAuth() },
     });
-    return handleResponse(response);
+    return manejarRespuesta(respuesta);
   },
 
-  async getSettings() {
-    const response = await fetch(`${API_URL}/api/settings`, {
-      headers: { ...getAuthHeaders() },
+  async obtenerConfiguracion() {
+    const respuesta = await fetch(`${URL_API}/api/settings`, {
+      headers: { ...obtenerCabecerasAuth() },
     });
-    return handleResponse(response);
+    return manejarRespuesta(respuesta);
   },
 
-  async updateSettings(settings: any) {
-    const dbSettings = {
-      partner_a_name: settings.partnerAName || settings.partner_a_name,
-      partner_b_name: settings.partnerBName || settings.partner_b_name,
+  async actualizarConfiguracion(configuracion: any) {
+    const configuracionDB = {
+      partner_a_name: configuracion.nombreSocioA || configuracion.partner_a_name,
+      partner_b_name: configuracion.nombreSocioB || configuracion.partner_b_name,
     };
-    const response = await fetch(`${API_URL}/api/settings`, {
+    const respuesta = await fetch(`${URL_API}/api/settings`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-      body: JSON.stringify(dbSettings),
+      headers: { "Content-Type": "application/json", ...obtenerCabecerasAuth() },
+      body: JSON.stringify(configuracionDB),
     });
-    return handleResponse(response);
+    return manejarRespuesta(respuesta);
   },
 };
