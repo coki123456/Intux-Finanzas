@@ -59,10 +59,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
             {cancelText}
           </button>
           <button
-            onClick={() => {
-              onConfirm();
-              onClose();
-            }}
+            onClick={onConfirm}
             className={`
                 px-4 py-2 text-sm font-medium text-white rounded-lg shadow-sm transition-all
                 ${

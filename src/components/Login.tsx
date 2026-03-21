@@ -14,20 +14,35 @@ export default function Login({
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setIsLoading(true);
 
     if (password.trim() === "") {
       setError("Por favor ingresa una clave.");
-      setIsLoading(false);
       return;
     }
 
-    // Guardamos la clave directamente. La validación real se hará en el backend
-    // al intentar hacer fetch, donde si es inválida retornará error.
-    localStorage.setItem("intux_pass", password);
-    onLoginSuccess();
+    setIsLoading(true);
+    try {
+      const respuesta = await fetch("/api/settings", {
+        headers: { "x-api-key": password },
+      });
 
-    setIsLoading(false);
+      if (respuesta.status === 401) {
+        setError("Clave incorrecta. Intenta nuevamente.");
+        return;
+      }
+
+      if (!respuesta.ok) {
+        setError("Error al conectar con el servidor.");
+        return;
+      }
+
+      localStorage.setItem("intux_pass", password);
+      onLoginSuccess();
+    } catch {
+      setError("Error de conexión. Verifica tu internet.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

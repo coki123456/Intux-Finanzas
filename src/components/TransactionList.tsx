@@ -192,10 +192,10 @@ const TransactionList: React.FC<TransactionListProps> = ({
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right font-mono font-medium text-zinc-900">
-                    <span className="text-zinc-400 text-xs mr-1">
-                      {expense.moneda}
+                    <span className={expense.moneda === "USD" ? "text-emerald-700" : "text-zinc-900"}>
+                      {expense.moneda === "USD" ? "u$d" : "$"} {expense.monto.toFixed(2)}
                     </span>
-                    ${expense.monto.toFixed(2)}
+                    <span className="text-zinc-400 text-xs ml-1">{expense.moneda}</span>
                   </td>
                   <td className="px-6 py-4 text-center">
                     <div className="flex items-center justify-center gap-2">

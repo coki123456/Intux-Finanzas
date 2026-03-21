@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { Menu, Plus } from "lucide-react";
 import Sidebar from "./components/Sidebar";
 import Dashboard from "./components/Dashboard";
@@ -6,7 +6,7 @@ import TransactionList from "./components/TransactionList";
 import TransactionForm from "./components/TransactionForm";
 
 import SettingsView from "./components/SettingsView";
-import { Gasto, ResumenBalance, TipoPagador } from "./types";
+import { Gasto } from "./types";
 import { Logo } from "./components/Logo";
 import { useToast, ToastProvider } from "./components/ToastContext";
 import ConfirmModal from "./components/ConfirmModal";
