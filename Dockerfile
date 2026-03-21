@@ -38,5 +38,5 @@ WORKDIR /app/server
 RUN npx tsc
 EXPOSE 3000
 
-# Run the compiled JS
-CMD ["node", "dist/index.js"]
+# Run migrations then start server
+CMD ["sh", "-c", "npx prisma db push && node dist/index.js"]
