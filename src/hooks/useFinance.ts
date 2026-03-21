@@ -8,24 +8,17 @@ export function useFinanzas(
   const [gastos, setGastos] = useState<Gasto[]>([]);
   const [estaCargando, setEstaCargando] = useState(true);
   const [nombresSocios, setNombresSocios] = useState({
-    socioA: "Socio A",
-    socioB: "Socio B",
+    partnerA: "Lillo",
+    partnerB: "Coki",
   });
 
   const obtenerConfiguracion = useCallback(async () => {
     try {
       const datos = await api.obtenerConfiguracion();
-      // PostgREST devuelve un array para consultas SELECT
-      if (datos && datos.length > 0) {
+      if (datos) {
         setNombresSocios({
-          socioA: datos[0].partner_a_name || "Socio A",
-          socioB: datos[0].partner_b_name || "Socio B",
-        });
-      } else if (datos && !Array.isArray(datos)) {
-        // Fallback si ya es un objeto
-        setNombresSocios({
-          socioA: datos.partner_a_name || datos.partnerAName || "Socio A",
-          socioB: datos.partner_b_name || datos.partnerBName || "Socio B",
+          partnerA: datos.partnerAName || "Lillo",
+          partnerB: datos.partnerBName || "Coki",
         });
       }
     } catch (error) {

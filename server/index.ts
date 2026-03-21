@@ -119,7 +119,7 @@ app.get("/api/settings", async (req, res) => {
     const configuracion = await prisma.appSettings.findUnique({
       where: { id: 1 },
     });
-    res.json(configuracion);
+    res.json(configuracion ?? { partnerAName: "Lillo", partnerBName: "Coki" });
   } catch (error) {
     console.error("Error al obtener configuración:", error);
     res.status(500).json({ error: "Error interno del servidor" });
@@ -128,18 +128,17 @@ app.get("/api/settings", async (req, res) => {
 
 app.post("/api/settings", async (req, res) => {
   try {
-    const { partnerAName, partnerBName, partner_a_name, partner_b_name } =
-      req.body;
+    const { partnerAName, partnerBName } = req.body;
     const configuracion = await prisma.appSettings.upsert({
       where: { id: 1 },
       update: {
-        partnerAName: partnerAName || partner_a_name,
-        partnerBName: partnerBName || partner_b_name,
+        partnerAName,
+        partnerBName,
       },
       create: {
         id: 1,
-        partnerAName: partnerAName || partner_a_name || "Lillo",
-        partnerBName: partnerBName || partner_b_name || "Coki",
+        partnerAName: partnerAName || "Lillo",
+        partnerBName: partnerBName || "Coki",
       },
     });
     res.json(configuracion);

@@ -1,5 +1,3 @@
-export const URL_API = import.meta.env.VITE_API_URL || "";
-
 function obtenerCabecerasAuth() {
   const token = localStorage.getItem("intux_pass");
   return token ? { "x-api-key": token } : {};
@@ -18,14 +16,14 @@ async function manejarRespuesta(respuesta: Response) {
 
 export const api = {
   async obtenerGastos() {
-    const respuesta = await fetch(`${URL_API}/api/expenses`, {
+    const respuesta = await fetch(`/api/expenses`, {
       headers: { ...obtenerCabecerasAuth() },
     });
     return manejarRespuesta(respuesta);
   },
 
   async crearGasto(gasto: any) {
-    const respuesta = await fetch(`${URL_API}/api/expenses`, {
+    const respuesta = await fetch(`/api/expenses`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...obtenerCabecerasAuth() },
       body: JSON.stringify(gasto),
@@ -34,7 +32,7 @@ export const api = {
   },
 
   async actualizarGasto(id: string, gasto: any) {
-    const respuesta = await fetch(`${URL_API}/api/expenses/${id}`, {
+    const respuesta = await fetch(`/api/expenses/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json", ...obtenerCabecerasAuth() },
       body: JSON.stringify(gasto),
@@ -43,7 +41,7 @@ export const api = {
   },
 
   async eliminarGasto(id: string) {
-    const respuesta = await fetch(`${URL_API}/api/expenses/${id}`, {
+    const respuesta = await fetch(`/api/expenses/${id}`, {
       method: "DELETE",
       headers: { ...obtenerCabecerasAuth() },
     });
@@ -51,21 +49,23 @@ export const api = {
   },
 
   async obtenerConfiguracion() {
-    const respuesta = await fetch(`${URL_API}/api/settings`, {
+    const respuesta = await fetch(`/api/settings`, {
       headers: { ...obtenerCabecerasAuth() },
     });
     return manejarRespuesta(respuesta);
   },
 
-  async actualizarConfiguracion(configuracion: any) {
-    const configuracionDB = {
-      partner_a_name: configuracion.nombreSocioA || configuracion.partner_a_name,
-      partner_b_name: configuracion.nombreSocioB || configuracion.partner_b_name,
-    };
-    const respuesta = await fetch(`${URL_API}/api/settings`, {
+  async actualizarConfiguracion(configuracion: {
+    partner_a_name: string;
+    partner_b_name: string;
+  }) {
+    const respuesta = await fetch(`/api/settings`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...obtenerCabecerasAuth() },
-      body: JSON.stringify(configuracionDB),
+      body: JSON.stringify({
+        partnerAName: configuracion.partner_a_name,
+        partnerBName: configuracion.partner_b_name,
+      }),
     });
     return manejarRespuesta(respuesta);
   },

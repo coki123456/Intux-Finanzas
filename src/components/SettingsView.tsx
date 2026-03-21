@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { api } from "../lib/api";
+import { useToast } from "./ToastContext";
 import { Loader2, Save } from "lucide-react";
 
 interface SettingsViewProps {
@@ -13,6 +14,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
 }) => {
   const [names, setNames] = useState(partnerNames);
   const [isSaving, setIsSaving] = useState(false);
+  const { showToast } = useToast();
 
   // Sync state if props change (e.g. initial load)
   useEffect(() => {
@@ -22,16 +24,15 @@ const SettingsView: React.FC<SettingsViewProps> = ({
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await api.updateSettings({
+      await api.actualizarConfiguracion({
         partner_a_name: names.partnerA,
         partner_b_name: names.partnerB,
       });
 
-      onUpdateNames(); // Trigger re-fetch in parent
-      alert("Nombres actualizados correctamente");
+      onUpdateNames();
     } catch (error) {
       console.error("Error saving settings:", error);
-      alert("Error al guardar la configuración");
+      showToast("Error al guardar la configuración", "error");
     } finally {
       setIsSaving(false);
     }

@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -r \"partnerA\\\\|partnerB\\\\|socioA\\\\|socioB\" /c/Users/esteb/Desktop/Intux-solutions/Proyectos/Intux-Finanzas/src --include=*.ts --include=*.tsx)"
+    ]
+  }
+}

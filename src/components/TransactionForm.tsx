@@ -10,12 +10,13 @@ import {
 } from "lucide-react";
 import { TipoPagador, Moneda, Gasto } from "../types";
 import { api } from "../lib/api";
+import { useToast } from "./ToastContext";
 
 interface FormularioTransaccionProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  partnerNames: { socioA: string; socioB: string };
+  partnerNames: { partnerA: string; partnerB: string };
   initialData?: Gasto;
 }
 
@@ -32,6 +33,7 @@ const TransactionForm: React.FC<FormularioTransaccionProps> = ({
   const [pagador, setPagador] = useState<TipoPagador>("Socio A");
   const [fecha, setFecha] = useState(new Date().toISOString().split("T")[0]);
   const [estaCargando, setEstaCargando] = useState(false);
+  const { showToast } = useToast();
 
   useEffect(() => {
     if (isOpen && initialData) {
@@ -77,7 +79,7 @@ const TransactionForm: React.FC<FormularioTransaccionProps> = ({
       onClose();
     } catch (error) {
       console.error("Error al guardar gasto:", error);
-      alert("Error al guardar el gasto");
+      showToast("Error al guardar el gasto", "error");
     } finally {
       setEstaCargando(false);
     }
@@ -211,7 +213,7 @@ const TransactionForm: React.FC<FormularioTransaccionProps> = ({
                 />
                 <User size={24} className="mb-2" />
                 <span className="text-sm font-semibold text-center">
-                  {partnerNames.socioA}
+                  {partnerNames.partnerA}
                 </span>
                 {pagador === "Socio A" && (
                   <div className="absolute right-2 top-2 text-zinc-900">
@@ -240,7 +242,7 @@ const TransactionForm: React.FC<FormularioTransaccionProps> = ({
                 />
                 <Users size={24} className="mb-2" />
                 <span className="text-sm font-semibold text-center">
-                  {partnerNames.socioB}
+                  {partnerNames.partnerB}
                 </span>
                 {pagador === "Socio B" && (
                   <div className="absolute right-2 top-2 text-zinc-900">
