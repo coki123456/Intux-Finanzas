@@ -8,11 +8,11 @@ import {
   Coins,
   DollarSign,
 } from "lucide-react";
-import { Expense, BalanceSummary, SingleCurrencyBalance } from "../types";
+import { Gasto, ResumenBalance } from "../types";
 
 interface DashboardProps {
-  summary: BalanceSummary;
-  recentExpenses: Expense[];
+  summary: ResumenBalance;
+  recentExpenses: Gasto[];
   partnerNames: { partnerA: string; partnerB: string };
 }
 
@@ -23,7 +23,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 }) => {
   const [currencyView, setCurrencyView] = useState<"ARS" | "USD">("ARS");
 
-  const currentSummary: SingleCurrencyBalance = summary[currencyView];
+  const currentSummary = summary[currencyView];
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -65,7 +65,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
           <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
             <div className="flex-1 w-full flex justify-center lg:justify-start">
-              {currentSummary.amountOwed < 0.01 ? (
+              {currentSummary.montoAdeudado < 0.01 ? (
                 <div className="flex flex-col items-center lg:items-start gap-4 py-4">
                   <div className="flex items-center gap-4 text-emerald-400">
                     <div className="rounded-full bg-emerald-500/10 p-3 ring-1 ring-emerald-500/20">
@@ -85,7 +85,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                   <div className="flex flex-col items-center gap-3 group">
                     <div className="relative">
                       <div className="w-20 h-20 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center text-2xl font-bold border border-white/10 shadow-xl">
-                        {currentSummary.debtor === "Socio A"
+                        {currentSummary.deudor === "Socio A"
                           ? partnerNames.partnerA.charAt(0)
                           : partnerNames.partnerB.charAt(0)}
                       </div>
@@ -94,7 +94,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                       </div>
                     </div>
                     <span className="text-sm font-medium text-zinc-300 mt-1">
-                      {currentSummary.debtor === "Socio A"
+                      {currentSummary.deudor === "Socio A"
                         ? partnerNames.partnerA
                         : partnerNames.partnerB}
                     </span>
@@ -114,7 +114,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                     </div>
                     <div className="bg-white text-zinc-950 px-4 py-2 rounded-lg font-bold text-xl shadow-lg mt-2 min-w-[120px] text-center border border-zinc-200">
                       {currencyView === "ARS" ? "$" : "u$d"}{" "}
-                      {currentSummary.amountOwed.toFixed(2)}
+                      {currentSummary.montoAdeudado.toFixed(2)}
                     </div>
                   </div>
 
@@ -122,7 +122,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                   <div className="flex flex-col items-center gap-3 group">
                     <div className="relative">
                       <div className="w-20 h-20 rounded-2xl bg-white text-zinc-950 flex items-center justify-center text-2xl font-bold shadow-xl shadow-white/5 ring-4 ring-white/10">
-                        {currentSummary.creditor === "Socio A"
+                        {currentSummary.acreedor === "Socio A"
                           ? partnerNames.partnerA.charAt(0)
                           : partnerNames.partnerB.charAt(0)}
                       </div>
@@ -131,7 +131,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                       </div>
                     </div>
                     <span className="text-sm font-medium text-zinc-300 mt-1">
-                      {currentSummary.creditor === "Socio A"
+                      {currentSummary.acreedor === "Socio A"
                         ? partnerNames.partnerA
                         : partnerNames.partnerB}
                     </span>
@@ -259,19 +259,19 @@ const Dashboard: React.FC<DashboardProps> = ({
                   <div
                     className={`
                                 w-12 h-12 rounded-2xl flex items-center justify-center text-sm font-bold shadow-sm transition-transform group-hover:scale-105
-                                ${expense.payer === "Socio A" ? "bg-zinc-900 text-white" : "bg-zinc-100 text-zinc-600"}
+                                ${expense.pagador === "Socio A" ? "bg-zinc-900 text-white" : "bg-zinc-100 text-zinc-600"}
                             `}
                   >
-                    {expense.payer === "Socio A"
+                    {expense.pagador === "Socio A"
                       ? partnerNames.partnerA.charAt(0)
                       : partnerNames.partnerB.charAt(0)}
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-zinc-900 mb-0.5">
-                      {expense.concept}
+                      {expense.concepto}
                     </p>
                     <p className="text-xs font-medium text-zinc-400">
-                      {new Date(expense.date).toLocaleDateString("es-ES", {
+                      {new Date(expense.fecha).toLocaleDateString("es-ES", {
                         day: "numeric",
                         month: "long",
                       })}
@@ -281,14 +281,14 @@ const Dashboard: React.FC<DashboardProps> = ({
                 <div className="text-right">
                   <span
                     className={`font-mono text-base font-bold px-3 py-1 rounded-lg border border-transparent transition-all block
-                            ${expense.currency === "USD" ? "text-emerald-700 bg-emerald-50 group-hover:border-emerald-200" : "text-zinc-900 bg-zinc-50 group-hover:border-zinc-200"}
+                            ${expense.moneda === "USD" ? "text-emerald-700 bg-emerald-50 group-hover:border-emerald-200" : "text-zinc-900 bg-zinc-50 group-hover:border-zinc-200"}
                         `}
                   >
-                    {expense.currency === "USD" ? "u$d" : "$"}{" "}
-                    {expense.amount.toFixed(2)}
+                    {expense.moneda === "USD" ? "u$d" : "$"}{" "}
+                    {expense.monto.toFixed(2)}
                   </span>
                   <span className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider">
-                    {expense.currency || "ARS"}
+                    {expense.moneda || "ARS"}
                   </span>
                 </div>
               </div>
