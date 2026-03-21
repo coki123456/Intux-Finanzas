@@ -62,11 +62,11 @@ const TransactionForm: React.FC<FormularioTransaccionProps> = ({
 
     try {
       const datosGasto = {
-        concept: concepto,
-        amount: parseFloat(monto),
-        payer: pagador,
-        date: fecha,
-        currency: moneda,
+        concepto,
+        monto: parseFloat(monto),
+        pagador,
+        fecha,
+        moneda,
       };
 
       if (initialData) {

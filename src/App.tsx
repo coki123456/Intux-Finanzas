@@ -24,7 +24,7 @@ function AppContent({ alCerrarSesion }: { alCerrarSesion: () => void }) {
 
   const [esModalEliminarAbierto, setEsModalEliminarAbierto] = useState(false);
   const [gastoParaEliminar, setGastoParaEliminar] = useState<string | null>(null);
-  const { mostrarToast } = useToast();
+  const { showToast: mostrarToast } = useToast();
 
   const {
     gastos,
