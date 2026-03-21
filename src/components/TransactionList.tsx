@@ -2,7 +2,6 @@ import React, { useState, useMemo } from "react";
 import { Gasto } from "../types";
 import {
   Search,
-  Filter,
   Download,
   Pencil,
   Trash2,
@@ -33,28 +32,25 @@ const TransactionList: React.FC<TransactionListProps> = ({
     return payer;
   };
 
-  const filteredGastos = useMemo(() => {
+  const filteredExpenses = useMemo(() => {
     return expenses.filter((expense) => {
-      // Search filter
-      const matchesSearch = expense.concepto
+      const matchesSearch = expense.concept
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
 
-      // Payer filter
       const matchesPayer =
         selectedPayer === "Todos los socios" ||
-        (selectedPayer === "Socio A" && expense.pagador === "Socio A") ||
-        (selectedPayer === "Socio B" && expense.pagador === "Socio B");
+        (selectedPayer === "Socio A" && expense.payer === "Socio A") ||
+        (selectedPayer === "Socio B" && expense.payer === "Socio B");
 
-      // Date Range filter
       let matchesDate = true;
       if (dateRange.start) {
         matchesDate =
-          matchesDate && new Date(expense.fecha) >= new Date(dateRange.start);
+          matchesDate && new Date(expense.date) >= new Date(dateRange.start);
       }
       if (dateRange.end) {
         matchesDate =
-          matchesDate && new Date(expense.fecha) <= new Date(dateRange.end);
+          matchesDate && new Date(expense.date) <= new Date(dateRange.end);
       }
 
       return matchesSearch && matchesPayer && matchesDate;
@@ -116,7 +112,6 @@ const TransactionList: React.FC<TransactionListProps> = ({
                 setDateRange((prev) => ({ ...prev, start: e.target.value }))
               }
               className="flex-1 px-3 py-1.5 rounded-lg border border-zinc-200 text-sm focus:border-zinc-900 outline-none text-zinc-600"
-              placeholder="Desde"
             />
             <span className="text-zinc-300 self-center">-</span>
             <input
@@ -126,7 +121,6 @@ const TransactionList: React.FC<TransactionListProps> = ({
                 setDateRange((prev) => ({ ...prev, end: e.target.value }))
               }
               className="flex-1 px-3 py-1.5 rounded-lg border border-zinc-200 text-sm focus:border-zinc-900 outline-none text-zinc-600"
-              placeholder="Hasta"
             />
             {(dateRange.start || dateRange.end) && (
               <button
@@ -162,40 +156,49 @@ const TransactionList: React.FC<TransactionListProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
-              {filteredGastos.map((expense) => (
+              {filteredExpenses.map((expense) => (
                 <tr
                   key={expense.id}
                   className="hover:bg-zinc-50/80 transition-colors group"
                 >
                   <td className="px-6 py-4 text-zinc-500 whitespace-nowrap">
-                    {new Date(expense.fecha).toLocaleDateString("es-ES", {
+                    {new Date(expense.date).toLocaleDateString("es-ES", {
                       year: "numeric",
                       month: "short",
                       day: "numeric",
                     })}
                   </td>
                   <td className="px-6 py-4 font-medium text-zinc-900">
-                    {expense.concepto}
+                    {expense.concept}
                   </td>
                   <td className="px-6 py-4">
                     <span
                       className={`
                       inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border
                       ${
-                        expense.pagador === "Socio A"
+                        expense.payer === "Socio A"
                           ? "bg-zinc-100 text-zinc-800 border-zinc-200"
                           : "bg-zinc-50 text-zinc-600 border-zinc-200"
                       }
                     `}
                     >
-                      {getPayerName(expense.pagador)}
+                      {getPayerName(expense.payer)}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-right font-mono font-medium text-zinc-900">
-                    <span className={expense.moneda === "USD" ? "text-emerald-700" : "text-zinc-900"}>
-                      {expense.moneda === "USD" ? "u$d" : "$"} {expense.monto.toFixed(2)}
+                  <td className="px-6 py-4 text-right font-mono font-medium">
+                    <span
+                      className={
+                        expense.currency === "USD"
+                          ? "text-emerald-700"
+                          : "text-zinc-900"
+                      }
+                    >
+                      {expense.currency === "USD" ? "u$d" : "$"}{" "}
+                      {Number(expense.amount).toFixed(2)}
                     </span>
-                    <span className="text-zinc-400 text-xs ml-1">{expense.moneda}</span>
+                    <span className="text-zinc-400 text-xs ml-1">
+                      {expense.currency}
+                    </span>
                   </td>
                   <td className="px-6 py-4 text-center">
                     <div className="flex items-center justify-center gap-2">
@@ -217,7 +220,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   </td>
                 </tr>
               ))}
-              {filteredGastos.length === 0 && (
+              {filteredExpenses.length === 0 && (
                 <tr>
                   <td
                     colSpan={5}

@@ -4,6 +4,11 @@ function obtenerCabecerasAuth() {
 }
 
 async function manejarRespuesta(respuesta: Response) {
+  if (respuesta.status === 401 || respuesta.status === 403) {
+    localStorage.removeItem("intux_pass");
+    window.dispatchEvent(new CustomEvent("intux:unauthorized"));
+    throw new Error("No autorizado");
+  }
   if (!respuesta.ok) {
     const error = await respuesta
       .json()
@@ -22,7 +27,13 @@ export const api = {
     return manejarRespuesta(respuesta);
   },
 
-  async crearGasto(gasto: any) {
+  async crearGasto(gasto: {
+    concept: string;
+    amount: number;
+    payer: string;
+    date: string;
+    currency: string;
+  }) {
     const respuesta = await fetch(`/api/expenses`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...obtenerCabecerasAuth() },
@@ -31,7 +42,16 @@ export const api = {
     return manejarRespuesta(respuesta);
   },
 
-  async actualizarGasto(id: string, gasto: any) {
+  async actualizarGasto(
+    id: string,
+    gasto: {
+      concept: string;
+      amount: number;
+      payer: string;
+      date: string;
+      currency: string;
+    }
+  ) {
     const respuesta = await fetch(`/api/expenses/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json", ...obtenerCabecerasAuth() },

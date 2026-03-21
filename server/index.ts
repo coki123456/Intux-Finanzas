@@ -71,12 +71,15 @@ app.get("/api/expenses", async (req, res) => {
 
 app.post("/api/expenses", async (req, res) => {
   try {
-    const datos = { ...req.body };
-    if (datos.date) {
-      datos.date = new Date(datos.date);
-    }
+    const { concept, amount, payer, date, currency } = req.body;
     const gasto = await prisma.expense.create({
-      data: datos,
+      data: {
+        concept,
+        amount: parseFloat(amount),
+        payer,
+        date: date ? new Date(date) : new Date(),
+        currency: currency || "ARS",
+      },
     });
     res.json(gasto);
   } catch (error) {
@@ -87,13 +90,16 @@ app.post("/api/expenses", async (req, res) => {
 
 app.put("/api/expenses/:id", async (req, res) => {
   try {
-    const datos = { ...req.body };
-    if (datos.date) {
-      datos.date = new Date(datos.date);
-    }
+    const { concept, amount, payer, date, currency } = req.body;
     const gasto = await prisma.expense.update({
       where: { id: req.params.id },
-      data: datos,
+      data: {
+        concept,
+        amount: parseFloat(amount),
+        payer,
+        date: date ? new Date(date) : undefined,
+        currency: currency || "ARS",
+      },
     });
     res.json(gasto);
   } catch (error) {

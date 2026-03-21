@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Menu, Plus } from "lucide-react";
 import Sidebar from "./components/Sidebar";
 import Dashboard from "./components/Dashboard";
@@ -211,6 +211,13 @@ function App() {
     if (token) {
       setEstaAutenticado(true);
     }
+  }, []);
+
+  // Auto-logout cuando cualquier llamada a la API recibe 401
+  useEffect(() => {
+    const handleUnauthorized = () => setEstaAutenticado(false);
+    window.addEventListener("intux:unauthorized", handleUnauthorized);
+    return () => window.removeEventListener("intux:unauthorized", handleUnauthorized);
   }, []);
 
   if (!estaAutenticado) {

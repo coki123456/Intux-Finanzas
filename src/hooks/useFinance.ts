@@ -47,16 +47,16 @@ export function useFinanzas(
   const calcularBalancePorMoneda = useCallback(
     (moneda: "ARS" | "USD", listaGastos: Gasto[]) => {
       const gastosMoneda = listaGastos.filter(
-        (g) => (g.moneda || "ARS") === moneda,
+        (g) => (g.currency || "ARS") === moneda,
       );
 
       const totalA = gastosMoneda
-        .filter((g) => g.pagador === "Socio A")
-        .reduce((suma, g) => suma + g.monto, 0);
+        .filter((g) => g.payer === "Socio A")
+        .reduce((suma, g) => suma + Number(g.amount), 0);
 
       const totalB = gastosMoneda
-        .filter((g) => g.pagador === "Socio B")
-        .reduce((suma, g) => suma + g.monto, 0);
+        .filter((g) => g.payer === "Socio B")
+        .reduce((suma, g) => suma + Number(g.amount), 0);
 
       const total = totalA + totalB;
       const cuotaPorPersona = total / 2;

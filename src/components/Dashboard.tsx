@@ -234,7 +234,6 @@ const Dashboard: React.FC<DashboardProps> = ({
       </div>
 
       <div className="flex flex-col gap-6">
-        {/* Recent List Section - Now full width */}
         <div className="w-full rounded-2xl border border-zinc-200 bg-white shadow-sm flex flex-col">
           <div className="border-b border-zinc-100 px-8 py-6 flex justify-between items-center bg-zinc-50/30">
             <div>
@@ -245,9 +244,6 @@ const Dashboard: React.FC<DashboardProps> = ({
                 Últimas 5 transacciones registradas
               </p>
             </div>
-            <button className="px-4 py-2 rounded-lg text-sm font-semibold text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 transition-colors">
-              Ver todo
-            </button>
           </div>
           <div className="flex-1 divide-y divide-zinc-100">
             {recentExpenses.slice(0, 5).map((expense) => (
@@ -258,20 +254,20 @@ const Dashboard: React.FC<DashboardProps> = ({
                 <div className="flex items-center gap-5">
                   <div
                     className={`
-                                w-12 h-12 rounded-2xl flex items-center justify-center text-sm font-bold shadow-sm transition-transform group-hover:scale-105
-                                ${expense.pagador === "Socio A" ? "bg-zinc-900 text-white" : "bg-zinc-100 text-zinc-600"}
-                            `}
+                      w-12 h-12 rounded-2xl flex items-center justify-center text-sm font-bold shadow-sm transition-transform group-hover:scale-105
+                      ${expense.payer === "Socio A" ? "bg-zinc-900 text-white" : "bg-zinc-100 text-zinc-600"}
+                    `}
                   >
-                    {expense.pagador === "Socio A"
+                    {expense.payer === "Socio A"
                       ? partnerNames.partnerA.charAt(0)
                       : partnerNames.partnerB.charAt(0)}
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-zinc-900 mb-0.5">
-                      {expense.concepto}
+                      {expense.concept}
                     </p>
                     <p className="text-xs font-medium text-zinc-400">
-                      {new Date(expense.fecha).toLocaleDateString("es-ES", {
+                      {new Date(expense.date).toLocaleDateString("es-ES", {
                         day: "numeric",
                         month: "long",
                       })}
@@ -281,14 +277,14 @@ const Dashboard: React.FC<DashboardProps> = ({
                 <div className="text-right">
                   <span
                     className={`font-mono text-base font-bold px-3 py-1 rounded-lg border border-transparent transition-all block
-                            ${expense.moneda === "USD" ? "text-emerald-700 bg-emerald-50 group-hover:border-emerald-200" : "text-zinc-900 bg-zinc-50 group-hover:border-zinc-200"}
-                        `}
+                      ${expense.currency === "USD" ? "text-emerald-700 bg-emerald-50 group-hover:border-emerald-200" : "text-zinc-900 bg-zinc-50 group-hover:border-zinc-200"}
+                    `}
                   >
-                    {expense.moneda === "USD" ? "u$d" : "$"}{" "}
-                    {expense.monto.toFixed(2)}
+                    {expense.currency === "USD" ? "u$d" : "$"}{" "}
+                    {Number(expense.amount).toFixed(2)}
                   </span>
                   <span className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider">
-                    {expense.moneda || "ARS"}
+                    {expense.currency || "ARS"}
                   </span>
                 </div>
               </div>

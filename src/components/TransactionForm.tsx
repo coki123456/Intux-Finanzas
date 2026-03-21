@@ -27,28 +27,27 @@ const TransactionForm: React.FC<FormularioTransaccionProps> = ({
   partnerNames,
   initialData,
 }) => {
-  const [concepto, setConcepto] = useState("");
-  const [monto, setMonto] = useState("");
-  const [moneda, setMoneda] = useState<Moneda>("ARS");
-  const [pagador, setPagador] = useState<TipoPagador>("Socio A");
-  const [fecha, setFecha] = useState(new Date().toISOString().split("T")[0]);
+  const [concept, setConcept] = useState("");
+  const [amount, setAmount] = useState("");
+  const [currency, setCurrency] = useState<Moneda>("ARS");
+  const [payer, setPayer] = useState<TipoPagador>("Socio A");
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [estaCargando, setEstaCargando] = useState(false);
   const { showToast } = useToast();
 
   useEffect(() => {
     if (isOpen && initialData) {
-      setConcepto(initialData.concepto);
-      setMonto(initialData.monto.toString());
-      setMoneda(initialData.moneda);
-      setPagador(initialData.pagador);
-      setFecha(initialData.fecha.split("T")[0]);
+      setConcept(initialData.concept);
+      setAmount(initialData.amount.toString());
+      setCurrency(initialData.currency);
+      setPayer(initialData.payer);
+      setDate(initialData.date.split("T")[0]);
     } else if (isOpen && !initialData) {
-      // Reiniciar formulario si se abre en modo "crear"
-      setConcepto("");
-      setMonto("");
-      setMoneda("ARS");
-      setPagador("Socio A");
-      setFecha(new Date().toISOString().split("T")[0]);
+      setConcept("");
+      setAmount("");
+      setCurrency("ARS");
+      setPayer("Socio A");
+      setDate(new Date().toISOString().split("T")[0]);
     }
   }, [isOpen, initialData]);
 
@@ -56,17 +55,17 @@ const TransactionForm: React.FC<FormularioTransaccionProps> = ({
 
   const manejarEnvio = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!concepto || !monto || !pagador || !fecha) return;
+    if (!concept || !amount || !payer || !date) return;
 
     setEstaCargando(true);
 
     try {
       const datosGasto = {
-        concepto,
-        monto: parseFloat(monto),
-        pagador,
-        fecha,
-        moneda,
+        concept,
+        amount: parseFloat(amount),
+        payer,
+        date,
+        currency,
       };
 
       if (initialData) {
@@ -120,8 +119,8 @@ const TransactionForm: React.FC<FormularioTransaccionProps> = ({
             <input
               type="text"
               required
-              value={concepto}
-              onChange={(e) => setConcepto(e.target.value)}
+              value={concept}
+              onChange={(e) => setConcept(e.target.value)}
               placeholder="Ej: Compra de supermercado"
               className="w-full rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 transition-all placeholder:text-zinc-400"
             />
@@ -132,15 +131,15 @@ const TransactionForm: React.FC<FormularioTransaccionProps> = ({
               <label className="text-sm font-medium text-zinc-700">Monto</label>
               <div className="relative">
                 <span className="absolute left-3 top-2.5 text-zinc-500 font-semibold">
-                  {moneda === "ARS" ? "$" : "u$d"}
+                  {currency === "ARS" ? "$" : "u$d"}
                 </span>
                 <input
                   type="number"
                   required
                   step="0.01"
                   min="0"
-                  value={monto}
-                  onChange={(e) => setMonto(e.target.value)}
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
                   placeholder="0.00"
                   className="w-full rounded-lg border border-zinc-200 bg-white pl-12 pr-4 py-2.5 text-sm outline-none focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 transition-all placeholder:text-zinc-400"
                 />
@@ -153,9 +152,9 @@ const TransactionForm: React.FC<FormularioTransaccionProps> = ({
               <div className="flex rounded-lg border border-zinc-200 p-1 bg-zinc-50">
                 <button
                   type="button"
-                  onClick={() => setMoneda("ARS")}
+                  onClick={() => setCurrency("ARS")}
                   className={`flex-1 flex items-center justify-center gap-1 py-1.5 text-sm font-medium rounded-md transition-all ${
-                    moneda === "ARS"
+                    currency === "ARS"
                       ? "bg-white text-zinc-900 shadow-sm"
                       : "text-zinc-500 hover:text-zinc-700"
                   }`}
@@ -164,9 +163,9 @@ const TransactionForm: React.FC<FormularioTransaccionProps> = ({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setMoneda("USD")}
+                  onClick={() => setCurrency("USD")}
                   className={`flex-1 flex items-center justify-center gap-1 py-1.5 text-sm font-medium rounded-md transition-all ${
-                    moneda === "USD"
+                    currency === "USD"
                       ? "bg-white text-emerald-700 shadow-sm"
                       : "text-zinc-500 hover:text-zinc-700"
                   }`}
@@ -182,8 +181,8 @@ const TransactionForm: React.FC<FormularioTransaccionProps> = ({
             <input
               type="date"
               required
-              value={fecha}
-              onChange={(e) => setFecha(e.target.value)}
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
               className="w-full rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 transition-all text-zinc-600"
             />
           </div>
@@ -197,7 +196,7 @@ const TransactionForm: React.FC<FormularioTransaccionProps> = ({
                 className={`
                 relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 p-4 transition-all
                 ${
-                  pagador === "Socio A"
+                  payer === "Socio A"
                     ? "border-zinc-900 bg-zinc-50 text-zinc-900"
                     : "border-zinc-100 bg-white text-zinc-500 hover:border-zinc-200"
                 }
@@ -205,17 +204,17 @@ const TransactionForm: React.FC<FormularioTransaccionProps> = ({
               >
                 <input
                   type="radio"
-                  name="pagador"
+                  name="payer"
                   value="Socio A"
-                  checked={pagador === "Socio A"}
-                  onChange={() => setPagador("Socio A")}
+                  checked={payer === "Socio A"}
+                  onChange={() => setPayer("Socio A")}
                   className="sr-only"
                 />
                 <User size={24} className="mb-2" />
                 <span className="text-sm font-semibold text-center">
                   {partnerNames.partnerA}
                 </span>
-                {pagador === "Socio A" && (
+                {payer === "Socio A" && (
                   <div className="absolute right-2 top-2 text-zinc-900">
                     <CheckCircle2 size={16} className="fill-current" />
                   </div>
@@ -226,7 +225,7 @@ const TransactionForm: React.FC<FormularioTransaccionProps> = ({
                 className={`
                 relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 p-4 transition-all
                 ${
-                  pagador === "Socio B"
+                  payer === "Socio B"
                     ? "border-zinc-900 bg-zinc-50 text-zinc-900"
                     : "border-zinc-100 bg-white text-zinc-500 hover:border-zinc-200"
                 }
@@ -234,17 +233,17 @@ const TransactionForm: React.FC<FormularioTransaccionProps> = ({
               >
                 <input
                   type="radio"
-                  name="pagador"
+                  name="payer"
                   value="Socio B"
-                  checked={pagador === "Socio B"}
-                  onChange={() => setPagador("Socio B")}
+                  checked={payer === "Socio B"}
+                  onChange={() => setPayer("Socio B")}
                   className="sr-only"
                 />
                 <Users size={24} className="mb-2" />
                 <span className="text-sm font-semibold text-center">
                   {partnerNames.partnerB}
                 </span>
-                {pagador === "Socio B" && (
+                {payer === "Socio B" && (
                   <div className="absolute right-2 top-2 text-zinc-900">
                     <CheckCircle2 size={16} className="fill-current" />
                   </div>

@@ -1,14 +1,14 @@
 export type TipoPagador = "Socio A" | "Socio B";
 export type Moneda = "ARS" | "USD";
 
+// Campos en inglés para coincidir con lo que devuelve el backend
 export interface Gasto {
   id: string;
-  fecha_creacion: string;
-  concepto: string;
-  monto: number;
-  pagador: TipoPagador;
-  fecha: string;
-  moneda: Moneda;
+  concept: string;
+  amount: number;
+  payer: TipoPagador;
+  date: string;
+  currency: Moneda;
 }
 
 export interface ResumenSaldoIndividual {
